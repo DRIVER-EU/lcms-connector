@@ -1,0 +1,17 @@
+{
+  "debugMode": true,
+  "refreshTime": 0,
+  "lcms": {
+    "username": "09-vullingse",
+    "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms"
+  },
+  "kafka": {
+    "zookeeperUrl": "217.169.227.210:3333",
+    "clientID": "lcms_connector_pn",
+    "topicPrefix": "lcms.actual"
+  },
+  "folder": {
+    "data": "data",
+    "images": "images"
+  }
+}

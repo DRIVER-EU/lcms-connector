@@ -1,0 +1,12 @@
+{
+  "globalDependencies": {
+    "geojson": "registry:dt/geojson#0.0.0+20160619034323",
+    "kafka-node": "registry:dt/kafka-node#0.2.22+20160724073224",
+    "node": "registry:dt/node#6.0.0+20161019125345",
+    "proj4": "registry:dt/proj4#2.3.15+20160919172814"
+  },
+  "dependencies": {
+    "pretty-data": "registry:npm/pretty-data#0.40.0+20160723033700",
+    "request": "registry:npm/request#2.69.0+20160428223725"
+  }
+}

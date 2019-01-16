@@ -1,0 +1,9 @@
+node_modules
+dist
+typings
+data
+images
+out
+tmp.json
+icons
+local

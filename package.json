@@ -1,0 +1,27 @@
+{
+  "name": "lcms_connector",
+  "version": "1.0.0",
+  "description": "Extract data from LCMS and publish it either to a folder or Kafka.",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "typings i",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "lcms_connector": "./bin/run.js"
+  },
+  "author": "Erik Vullings <erik.vullings@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "command-line-args": "^3.0.1",
+    "command-line-usage": "^3.0.3",
+    "kafka-node": "^0.5.9",
+    "pretty-data": "^0.40.0",
+    "proj4": "^2.3.15",
+    "proj4js": "^10.0.0",
+    "request": "^2.76.0"
+  },
+  "devDependencies": {
+    "typings": "^1.5.0"
+  }
+}
