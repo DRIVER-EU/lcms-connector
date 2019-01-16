@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as Kafka from 'kafka-node';
-import { Sink } from './sink';
-import { IConfig } from '../models/config';
+import {Producer, ProduceRequest, Client} from 'kafka-node';
+import {Sink} from './sink';
+import {IConfig} from '../models/config';
 
 const config: IConfig = require(path.resolve('config.json')),
   log = console.log.bind(console),
@@ -10,12 +10,13 @@ const config: IConfig = require(path.resolve('config.json')),
 
 /**
  * Save GeoJSON to a folder.
- * 
+ *
  * @export
  * @class FolderSink
  */
 export class KafkaSink extends Sink {
-  private producer: Kafka.Producer;
+  private producer: Producer;
+  private producerIsReady: boolean = false;
   private keys: string[] = [];
   private topicPrefix: string;
 
@@ -53,15 +54,15 @@ export class KafkaSink extends Sink {
 
   /**
    * Publish a file to Kafka using gzip compression.
-   * 
+   *
    * @private
    * @param {string} file
    * @param {number} index
-   * 
+   *
    * @memberOf Router
    */
   private publish(topic: string, geoJson?: Object) {
-    let payload = <Kafka.ProduceRequest>{
+    let payload = <ProduceRequest>{
       topic: topic,
       partition: 0,
       messages: geoJson ? JSON.stringify(geoJson) : '',
@@ -83,34 +84,35 @@ export class KafkaSink extends Sink {
 
   /**
    * Initialize the producer, and create the topics (if needed)
-   * 
+   *
    * @private
    * @param {Kafka.Client} client
    * @param {ICommandLineOptions} options
    * @param {(err, data) => void} cb
-   * 
+   *
    * @memberOf Router
    */
   private initialize() {
-    const client = new Kafka.Client(config.kafka.zookeeperUrl, config.kafka.clientID);
-    const Producer = Kafka.Producer;
+    const client = new Client(config.kafka.zookeeperUrl, config.kafka.clientID);
     this.producer = new Producer(client);
+    this.producer.on('ready', () => {
+      log(`Producer is ready`);
+      this.producerIsReady = true;
+    });
     this.producer.on('error', err => {
       log_error(err);
     });
   }
 
   private createTopic(topic: string, cb: () => void) {
-    if ((<any>this.producer).ready) {
+    if (this.producerIsReady) {
       log(`Creating topic ${topic}.`);
       this.producer.createTopics([topic], false, cb);
     } else {
-      this.producer.on('ready', event => {
-        log('Producer is ready, creating topic ${topic}.');
+      this.producer.on('ready', () => {
+        log(`Producer is ready, creating topic ${topic}.`);
         this.producer.createTopics([topic], false, cb);
       });
     }
-
   }
-
 }
