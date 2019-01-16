@@ -20,7 +20,7 @@ export class ActivityWebService extends AbstractWebService {
   }
 
   public loadData(successCall: Function, errorCall: Function, msg) {
-    let timestamp = Date.now() - 200 * 3600 * 1000;
+    let timestamp = Date.now() - 2000 * 3600 * 1000;
     super.loadData(successCall, errorCall, { active_after: timestamp });
   }
 }

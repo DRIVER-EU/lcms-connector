@@ -34,14 +34,15 @@ export class Drawing {
   public toGeoJSONCollection(ticket: Ticket) {
     let col: { [key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject> } = {};
     this.topicLayers.forEach(tl => {
+      if (!tl.id) return;
+      let geoJson = <GeoJSON.FeatureCollection<GeoJSON.GeometryObject>>{
+        type: 'FeatureCollection',
+        features: []
+      };
+      col[tl.name || tl.id] = geoJson;
+      let features = geoJson.features;
       tl.actionLayers.forEach(al => {
         if (!al.elements) return;
-        let geoJson = <GeoJSON.FeatureCollection<GeoJSON.GeometryObject>>{
-          type: 'FeatureCollection',
-          features: []
-        };
-        col[al.name] = geoJson;
-        let features = geoJson.features;
         al.elements.forEach(el => {
           if (el instanceof LCMS.Part && el.children) {
             el.children.forEach(c => {

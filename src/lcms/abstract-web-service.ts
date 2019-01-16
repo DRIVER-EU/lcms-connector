@@ -1,6 +1,7 @@
 import * as request from 'request';
 
 export class AbstractWebService {
+  public cookie: string = '';
   protected serverUrl: string;
   protected options: request.CoreOptions = {
     method: 'POST',
@@ -26,6 +27,7 @@ export class AbstractWebService {
     this.options.body = JSON.stringify(msg);
     request.post(this.getServiceSpecificUrl(), this.options, (error, res, body) => {
       if (error) return errorCall(error);
+      this.cookie = res.headers['set-cookie'].find(h => h.indexOf('JSESSIONID') > -1);
       successCallback(JSON.parse(body));
     });
   }

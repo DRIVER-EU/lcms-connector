@@ -2,7 +2,7 @@
   "debugMode": true,
   "refreshTime": 0,
   "lcms": {
-    "username": "09-vullingse",
+    "username": "15-vullingse",
     "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms"
   },
   "kafka": {

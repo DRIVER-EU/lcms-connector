@@ -1,6 +1,6 @@
 # LCMS (Landelijk Crisis Management Systeem) connector
 
-The LCMS connector, as its name suggests, connects to the Dutch LCMS plot system and extracts the plot data. It can either save each layer as a separate GeoJSON file, or publish it to the information data-hub (based on Apache Kafka).
+The LCMS connector, as its name suggests, connects to the Dutch LCMS plot system and extracts the plot data. It can either save each layer as a separate GeoJSON file, or publish it to Apache Kafka.
 
 # Usage
 

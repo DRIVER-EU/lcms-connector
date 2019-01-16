@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "es6",
         "declaration": false,
         "module": "commonjs",
         "moduleResolution": "node",
@@ -11,7 +11,8 @@
         "sourceMap": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "pretty": true
+        "pretty": true,
+        "strict": false
     },
     "filesGlob": [
         "src/**/*.ts",

@@ -1,7 +1,9 @@
+import { AbstractWebService } from "./abstract-web-service";
+
 export class Ticket {
   private static timeToLive = 36e5;
 
-  constructor(private ticket: Ticket, private serverUrl: string, private activityWS, private createdOn?: number) {
+  constructor(private ticket: Ticket, private serverUrl: string, private activityWS: AbstractWebService, private createdOn?: number) {
     if (!createdOn) createdOn = Date.now();
   }
 
@@ -28,6 +30,10 @@ export class Ticket {
     let ticket = this.getTicket();
     let ticketUrl = ticket ? '&ticket=' + ticket : '';
     return this.serverUrl + '/mobilemapmeeting' + component + ticketUrl;
+  }
+
+  public getCookie() {
+    return this.activityWS.cookie;
   }
 }
 

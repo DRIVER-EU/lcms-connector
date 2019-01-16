@@ -8,6 +8,7 @@ export class Entity {
     transform?: { m00: number; m10: number; m01: number; m11: number };
     // eg /DownloadFile?imageid=41HK0U2VJHK1G9XQ1PCPPS6OEEDTHT (server address?)
     downloadLocation?: string;
+    symbolId?: string;
     alpha?: number; // 0..1
   };
   text?: {

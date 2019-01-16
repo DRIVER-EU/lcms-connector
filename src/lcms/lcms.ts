@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as https from 'https';
+import * as request from 'request';
 import * as proj4 from 'proj4';
 import { Entity } from './entity';
 import { ActionLayer } from './action-layer';
@@ -176,8 +176,13 @@ export class AElement {
 
   protected downloadFile(filename: string, url: string, ticket: Ticket) {
     let file = fs.createWriteStream(filename);
-    let request = https.get(ticket.getFullUrl(url), (response) => {
-      response.pipe(file);
+    let req = request.get(url, {encoding: null, headers: {'Cookie': ticket.getCookie()}}, (err, response, body) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      file.write(body);
+      file.end();
     });
   }
 
@@ -535,6 +540,10 @@ export class Symbol extends AElement {
       }
     }
     this.externalImage = x.symbol.downloadLocation;
+    if (!this.externalImage) {
+      let data = decodeURIComponent(`{"imageId":"${x.symbol.symbolId}","hostActivityId":"${this.actionLayer.id}","activityId":"${this.actionLayer.id}"}`);
+      this.externalImage = `https://oefen-veiligheidsregio.lcms.nl/lcms//drawing/symbol?data=${data}`;
+    }
   }
 
   getLabel() {
@@ -554,13 +563,15 @@ export class Symbol extends AElement {
     } else {
       properties = this.attributes;
     }
-    if (this.attributes && this.attributes.hasOwnProperty('symbol') && this.attributes['symbol'].hasOwnProperty('type')) {
-      let symbol = this.attributes['symbol']['type'] + '.png';
+    if (this.obj && this.obj.hasOwnProperty('symbol') && this.obj.symbol.hasOwnProperty('symbolId')) {
+      // let symbol = this.attributes['symbol']['type'] + '.png';
+      let symbol = this.obj.symbol.symbolId;
       properties['icon'] = symbol;
       if (!Symbol.settings.symbolExists(symbol)) {
         let filename = path.join(Symbol.settings.imageFolder, symbol);
         fs.exists(filename, exists => {
           Symbol.settings.addSymbol(symbol);
+          let cookie = ticket.getCookie();
           if (exists) return;
           this.downloadFile(filename, this.externalImage, ticket);
         });

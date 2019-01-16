@@ -6,15 +6,17 @@ import { Settings } from './models/settings';
 
 import { Activity } from './lcms/activity';
 import { ActivityWebService } from './lcms/activity-web-service';
-import { DrawingWebService } from './lcms/drawing-web-service';
-import { Drawing } from './lcms/drawing';
+import { DrawingsWebService } from './lcms/drawings-web-service';
 import { Ticket } from './lcms/ticket';
+import { Drawings } from './lcms/drawings';
 
 import { Sink } from './sinks/sink';
 import { FolderSink } from './sinks/folderSink';
 import { KafkaSink } from './sinks/kafkaSink';
 
-const config: IConfig = require(path.resolve('config.json'));
+const publicConfig: IConfig = require(path.resolve('config.json'));
+const localConfig: IConfig = require(path.resolve('./local/config.json'));
+const config: IConfig = Object.assign(publicConfig, localConfig);
 
 const log = console.log;
 const error = console.error;
@@ -31,7 +33,7 @@ const error = console.error;
 
 export class Server {
   private activitiesWS: ActivityWebService;
-  private drawingsWS: DrawingWebService;
+  private drawingsWS: DrawingsWebService;
   private exercise: string;
 
   /** The following variables are responsible for holding the ticket object, list
@@ -52,6 +54,7 @@ export class Server {
   private refreshTime: number;
 
   constructor(options?: ICommandLineOptions) {
+    log('Starting server...');
     process.on('SIGINT', () => {
       process.exit(0);
     });
@@ -71,6 +74,7 @@ export class Server {
       this.sink = new FolderSink(dataFolder, imageFolder);
     }
 
+    log(`Contacting ${config.lcms.serverUrl}`);
     this.initialize(config.lcms.serverUrl, options.username || config.lcms.username, options.password);
   }
 
@@ -79,11 +83,13 @@ export class Server {
     // activitiesWS.setUp(serverUrl, username, password);
     // drawingsWS.setUp(serverUrl, username, password);
     this.activitiesWS = new ActivityWebService(serverUrl, username, password);
-    this.drawingsWS = new DrawingWebService(serverUrl, username, password);
+    this.drawingsWS = new DrawingsWebService(serverUrl, username, password);
 
     log('Loading activities from server ' + serverUrl + '\n');
 
     var success = (data: { ticket: Ticket, activities: Activity[] }) => {
+      
+      log(data.activities.map((a, index) => `${index}. ${a.title}`).join('\n'));
       this.ticket = data.ticket;
       this.drawings = [];
       // Display the empty tree (that will be populated below)
@@ -132,8 +138,8 @@ export class Server {
    */
   loadDrawing(activity: Activity) {
     // Success callback that renders the drawing into the tree.
-    var success = (drawing: Drawing) => {
-      let col = drawing.toGeoJSONCollection(this.ticket);
+    var success = (drawings: Drawings) => {
+      let col = drawings.toGeoJSONCollection(this.ticket);
       // if (config.debugMode) {
       //   log(JSON.stringify(col, null, 2));
       // }

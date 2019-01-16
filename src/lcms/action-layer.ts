@@ -28,7 +28,8 @@ export class ActionLayer {
     return actionLayer;
   }
 
-  public static CURRENT_VERSION = 20150909;
+  // public static CURRENT_VERSION = 20150909;
+  public static CURRENT_VERSION = 20161115;
 
   public setUpElements() {
     if (this.removed || typeof this.entities === 'undefined') return;
