@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import {Producer, ProduceRequest, Client} from 'kafka-node';
 import {Sink} from './sink';

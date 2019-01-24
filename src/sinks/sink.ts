@@ -1,3 +1,5 @@
+import { FeatureCollection } from "geojson";
+
 /**
  * The Sink class offers an endpoint to the received data. It should be overriden, e.g. to save the data to a folder, or publish it to Kafka.
  * 
@@ -84,7 +86,7 @@ export class Sink {
    * 
    * @memberOf Sink
    */
-  protected sendData(key: string, geoJson: Object) { return; }
+  protected sendData(key: string, geoJson: FeatureCollection) { return; }
 
   /**
    * Called when the layer should be removed.

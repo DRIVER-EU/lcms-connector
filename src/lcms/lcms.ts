@@ -166,6 +166,17 @@ export class AElement {
   // }
 
   public toGeoJSONFeature(ticket?: Ticket): GeoJSON.Feature<GeoJSON.GeometryObject> {
+    if (this.obj && this.obj.pointList) {
+      const coords = this.obj.pointList.map(point => [point.x, point.y]);
+      return <GeoJSON.Feature<GeoJSON.Polygon>>{
+        type: 'Feature',
+        geometry: <GeoJSON.Polygon>{
+          type: 'Polygon',
+          coordinates: [coords]
+        },
+        properties: Object.assign({id: this.getID()}, this.attributes)
+      };
+    }
     return null;
   }
 
@@ -234,8 +245,7 @@ export class Line extends AElement {
         type: 'LineString',
         coordinates: this.coordinates
       },
-      properties: this.attributes,
-      id: this.getID()
+      properties: Object.assign({id: this.getID()}, this.attributes)
     };
   }
 
@@ -294,8 +304,7 @@ export class Rectangle extends PolyLine {
         type: 'Polygon',
         coordinates: [this.coordinates]
       },
-      properties: this.attributes,
-      id: this.getID()
+      properties: Object.assign({id: this.getID()}, this.attributes)
     };
   }
 }
@@ -386,8 +395,7 @@ export class Arc extends AElement {
         type: 'Polygon',
         coordinates: [this.coordinates]
       },
-      properties: this.attributes,
-      id: this.getID()
+      properties: Object.assign({id: this.getID()}, this.attributes)
     };
   }
 }
@@ -584,8 +592,7 @@ export class Symbol extends AElement {
         type: 'Point',
         coordinates: this.origin
       },
-      properties: properties,
-      id: this.getID()
+      properties: Object.assign({id: this.getID()}, properties)
     };
   }
 

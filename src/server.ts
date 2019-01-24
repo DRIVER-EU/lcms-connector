@@ -12,7 +12,7 @@ import { Drawings } from './lcms/drawings';
 
 import { Sink } from './sinks/sink';
 import { FolderSink } from './sinks/folderSink';
-import { KafkaSink } from './sinks/kafkaSink';
+import { TestbedSink } from './sinks/testbedSink';
 
 const publicConfig: IConfig = require(path.resolve('config.json'));
 const localConfig: IConfig = require(path.resolve('./local/config.json'));
@@ -68,8 +68,8 @@ export class Server {
 
     Settings.getInstance().imageFolder = imageFolder;
 
-    if (options.kafka) {
-      this.sink = new KafkaSink();
+    if (options.kafka && config.kafka) {
+      this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.topic);
     } else {
       this.sink = new FolderSink(dataFolder, imageFolder);
     }
@@ -89,20 +89,19 @@ export class Server {
 
     var success = (data: { ticket: Ticket, activities: Activity[] }) => {
       
-      log(data.activities.map((a, index) => `${index}. ${a.title}`).join('\n'));
       this.ticket = data.ticket;
       this.drawings = [];
       // Display the empty tree (that will be populated below)
 
       let exerciseFound = false;
-      data.activities.forEach(a => {
+      data.activities.forEach((a, aIndex) => {
         try {
           if (this.exercise && !exerciseFound && a.title.indexOf(this.exercise) >= 0) {
-            log('\nLoading activity ' + a.title + ' ...\n');
+            log(`\nLoading activity ${aIndex}:  ${a.title} ...\n`);
             exerciseFound = true;
             this.loadDrawing(a);
           } else {
-            log('Activity ' + a.title);
+            log(`${aIndex}. ${a.title}`);
           }
         } catch (e) {
           // In case of error (e.g. if there are unsupported layers), alert the user
@@ -144,11 +143,13 @@ export class Server {
       //   log(JSON.stringify(col, null, 2));
       // }
       this.sink.send(col);
+      log(`Sinking ${Object.keys(col).length} collections: `);
+      log(`${Object.keys(col).map(k => `\t${k}`).join('\n')}`);
       if (this.refreshTime) {
         setTimeout(() => this.loadDrawing(activity), this.refreshTime * 1000);
       } else {
         // Allow node some time to save the files to disk.
-        setTimeout(() => process.exit(0), 3000);
+        setTimeout(() => process.exit(0), 30000);
       }
     };
 

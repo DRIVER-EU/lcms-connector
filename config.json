@@ -6,9 +6,26 @@
     "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms"
   },
   "kafka": {
-    "zookeeperUrl": "217.169.227.210:3333",
-    "clientID": "lcms_connector_pn",
-    "topicPrefix": "lcms.actual"
+    "testbedOptions": {
+      "kafkaHost": "localhost:3501",
+      "schemaRegistry": "http://localhost:3502",
+      "fetchAllSchemas": false,
+      "fetchAllVersions": false,
+      "wrapUnions": false,
+      "clientId": "lcms-plotter",
+      "consume": [],
+      "produce": ["lcms_plots"],
+      "autoRegisterSchemas": true,
+      "schemaFolder": "./schemas",
+      "fromOffset": true,
+      "logging": {
+        "logToConsole": 2,
+        "logToFile": 2,
+        "logToKafka": 3,
+        "logFile": "log.txt"
+      }
+    },
+    "topic": "lcms_plots"
   },
   "folder": {
     "data": "data",

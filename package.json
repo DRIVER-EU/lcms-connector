@@ -4,7 +4,8 @@
   "description": "Extract data from LCMS and publish it either to a folder or Kafka.",
   "main": "index.js",
   "scripts": {
-    "start": "node ./bin/run.js -e \"Warande-brandweeracademie\"",
+    "build": "tsc",
+    "start": "node ./bin/run.js -e \"Driver-EU\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
@@ -15,7 +16,7 @@
   "dependencies": {
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
-    "kafka-node": "^3.0.1",
+    "node-test-bed-adapter": "^0.7.3",
     "lodash": "4.17.11",
     "pretty-data": "^0.40.0",
     "proj4": "^2.5.0",
