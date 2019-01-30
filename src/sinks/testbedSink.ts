@@ -1,6 +1,6 @@
 import {ProduceRequest, TestBedAdapter, ITestBedOptions} from 'node-test-bed-adapter';
 import {Sink} from './sink';
-import { FeatureCollection } from 'geojson';
+import {FeatureCollection} from 'geojson';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -86,18 +86,43 @@ export class TestbedSink extends Sink {
    * @memberOf Router
    */
   private publish(topic: string, geoJson?: FeatureCollection) {
-    let payload: ProduceRequest = {
-      topic: topic,
-      partition: 0,
-      messages: geoJson,
-      attributes: 1
-    };
+    const payload = this.createProduceRequest(topic, geoJson);
     if (!this.adapter || !this.adapter.isConnected) {
       log(`Adapter not ready, add GeoJSON file to queue (at position: ${this.queue.length}).`);
       this.queue.push(payload);
       return;
     }
     this.sendPayload(payload);
+  }
+
+  private createProduceRequest(topic: string, geoJson?: FeatureCollection): ProduceRequest {
+    this.wrapUnionFieldsOfGeojson(geoJson);
+    const payload: ProduceRequest = {
+      topic: topic,
+      partition: 0,
+      messages: geoJson,
+      attributes: 1
+    };
+    return payload;
+  }
+
+  private wrapUnionFieldsOfGeojson(geoJson: FeatureCollection) {
+    if (!geoJson || !geoJson.features) return;
+    geoJson.features.forEach(f => {
+      if (f && f.geometry && f.geometry && Object.keys(f.geometry).length > 1) {
+        const geom = JSON.parse(JSON.stringify(f.geometry));
+        delete f.geometry;
+        f.geometry = {} as any;
+        f.geometry[`eu.driver.model.geojson.${geom.type}`] = geom;
+      }
+      if (f && f.properties && Object.keys(f.properties).length > 0) {
+        Object.keys(f.properties).forEach(key => {
+          const val = f.properties[key];
+          f.properties[key] = {};
+          f.properties[key][`${typeof val}`] = val;
+        });
+      }
+    });
   }
 
   private sendPayload(payload: ProduceRequest) {
