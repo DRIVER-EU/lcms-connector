@@ -1,4 +1,5 @@
 import {AbstractWebService} from './abstract-web-service';
+import {Ticket} from './ticket';
 import {Activity} from './activity';
 
 export class ActivityWebService extends AbstractWebService {
@@ -7,18 +8,19 @@ export class ActivityWebService extends AbstractWebService {
   }
 
   public getServiceSpecificUrl() {
-    return this.serverUrl + '/gui/getactivities';
+    return this.serverUrl + '/drawing/activities';
   }
 
-  public getRelevantData(data: {activitieList: Activity[];}) {
-    data.activitieList = data.activitieList.map(a => {
+  public getRelevantData(data: {activities: Activity[]; ticket: Ticket}) {
+    data.activities = data.activities.map(a => {
       return Activity.fromObject(a);
     });
-    return data.activitieList;
+    data.ticket = new Ticket(data.ticket, this.getServerUrl(), this);
+    return data;
   }
 
-  public loadData(successCall: Function, errorCall: Function, msg?: any, cookie?: string) {
+  public loadData(successCall: Function, errorCall: Function, msg) {
     let timestamp = Date.now() - 1000 * 3600 * 1000;
-    super.loadData(successCall, errorCall, msg, cookie);
+    super.loadData(successCall, errorCall, {active_after: timestamp});
   }
 }

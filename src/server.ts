@@ -1,18 +1,21 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ICommandLineOptions } from './cli';
-import { IConfig } from './models/config';
-import { Settings } from './models/settings';
+import {ICommandLineOptions} from './cli';
+import {IConfig} from './models/config';
+import {Settings} from './models/settings';
 
-import { Activity } from './lcms/activity';
-import { ActivityWebService } from './lcms/activity-web-service';
-import { DrawingsWebService } from './lcms/drawings-web-service';
-import { Ticket } from './lcms/ticket';
-import { Drawings } from './lcms/drawings';
+import {Activity} from './lcms/activity';
+import {LoginWebService} from './lcms/login-web-service';
+import {ActivityWebService} from './lcms/activity-web-service';
+import {DrawingsWebService} from './lcms/drawings-web-service';
+import {ActivityViewsWebService} from './lcms/activity-views-web-service';
+import {ActivityMetadataWebService} from './lcms/activity-metadata-web-service';
+import {Ticket} from './lcms/ticket';
+import {Drawings} from './lcms/drawings';
 
-import { Sink } from './sinks/sink';
-import { FolderSink } from './sinks/folderSink';
-import { TestbedSink } from './sinks/testbedSink';
+import {Sink} from './sinks/sink';
+import {FolderSink} from './sinks/folderSink';
+import {TestbedSink} from './sinks/testbedSink';
 
 const publicConfig: IConfig = require(path.resolve('config.json'));
 const localConfig: IConfig = require(path.resolve('./local/config.json'));
@@ -32,9 +35,13 @@ const error = console.error;
 // const drawingsWS = new LCMS.DrawingWebService();
 
 export class Server {
+  private loginWS: LoginWebService;
   private activitiesWS: ActivityWebService;
+  private activityViewsWS: ActivityViewsWebService;
+  private activityMetadataWS: ActivityMetadataWebService;
   private drawingsWS: DrawingsWebService;
   private exercise: string;
+  private cookie: string;
 
   /** The following variables are responsible for holding the ticket object, list
    * of available drawings and list of currently selected layers.
@@ -46,7 +53,7 @@ export class Server {
 
   /**
    * Refresh time in seconds
-   * 
+   *
    * @private
    * @type {number}
    * @memberOf Server
@@ -82,31 +89,133 @@ export class Server {
     // Set up both web services.
     // activitiesWS.setUp(serverUrl, username, password);
     // drawingsWS.setUp(serverUrl, username, password);
+    this.loginWS = new LoginWebService(serverUrl, username, password);
     this.activitiesWS = new ActivityWebService(serverUrl, username, password);
+    this.activityViewsWS = new ActivityViewsWebService(serverUrl, username, password);
+    this.activityMetadataWS = new ActivityMetadataWebService(serverUrl, username, password);
     this.drawingsWS = new DrawingsWebService(serverUrl, username, password);
 
     log('Loading activities from server ' + serverUrl + '\n');
 
-    var success = (data: { ticket: Ticket, activities: Activity[] }) => {
-      
-      this.ticket = data.ticket;
-      this.drawings = [];
-      // Display the empty tree (that will be populated below)
+    var success = (cookie: string) => {
+      log(`Stored cookie: ${cookie}`);
+      this.cookie = cookie;
+      this.loadActivities();
+    };
 
+    // Failure call back that displays the HTTP error status to the user
+    var failure = err => {
+      error('Error while logging in: ' + JSON.stringify(err));
+    };
+
+    /** Load the data using both call backs defined above.*/
+    this.loginWS.loadData(success, failure, null);
+  }
+
+  /**
+   * This function is called by the success callback of the loadActivities function above.
+   * It gets the data for the defined activity and reders it in the tree.
+   */
+  loadDrawing(activity: Activity) {
+    // Success callback that renders the drawing into the tree.
+    var success = (drawings: Drawings) => {
+      let col = drawings.toGeoJSONCollection(this.ticket);
+
+      this.sink.send(col);
+
+      log(`Sinking ${Object.keys(col).length} collections: `);
+      log(
+        `${Object.keys(col)
+          .map(k => `\t${k}`)
+          .join('\n')}`
+      );
+      if (this.refreshTime) {
+        setTimeout(() => this.loadDrawing(activity), this.refreshTime * 1000);
+      } else {
+        // Allow node some time to save the files to disk.
+        setTimeout(() => process.exit(0), 30000);
+      }
+    };
+
+    // Failure callback that displayes the HTTP error status to the user
+    var failure = error => {
+      log('Error when loading drawing: ' + error.statusText);
+    };
+
+    /** Load the drawing data using both callbacks and the activity id. */
+    this.drawingsWS.loadData(success, failure, activity.id, this.cookie);
+  }
+
+  /**
+   * This function is called by the success callback of the loadActivities function above.
+   * It gets the views for the defined activity and renders it in the tree.
+   */
+  loadViews(activity: Activity) {
+    // Success callback that renders the drawing into the tree.
+    var success = (views: any) => {
+      let col = JSON.stringify(views) as any;
+
+      // this.sink.send(col);
+
+      log(`Sinking ${views.length} collections: `);
+    };
+
+    // Failure callback that displayes the HTTP error status to the user
+    var failure = error => {
+      log('Error when loading views: ' + error.statusText);
+    };
+
+    /** Load the drawing data using both callbacks and the activity id. */
+    this.activityViewsWS.loadData(success, failure, {activityId: activity.id}, this.cookie);
+  }
+
+  /**
+   * This function is called by the success callback of the loadActivities function above.
+   * It gets the metadata for the defined activity and renders it in the tree.
+   */
+  loadMetadata(activity: Activity) {
+    // Success callback that renders the drawing into the tree.
+    var success = (metadata: any) => {
+      let col = metadata;
+
+      // this.sink.send(col);
+
+      log(`Sinking ${Object.keys(col).length} collections: `);
+      log(col);
+    };
+
+    // Failure callback that displayes the HTTP error status to the user
+    var failure = error => {
+      log('Error when loading metadata: ' + error.statusText);
+    };
+
+    /** Load the drawing data using both callbacks and the activity id. */
+    this.activityMetadataWS.loadData(success, failure, {activityId: activity.id, setActivityRead: true}, this.cookie);
+  }
+
+  /**
+   * This function is called by the success callback of the login function above.
+   * It gets the metadata for the defined activity and renders it in the tree.
+   */
+  loadActivities() {
+    // Success callback that renders the drawing into the tree.
+    var success = (activities: Activity[]) => {
       let exerciseFound = false;
-      data.activities.forEach((a, aIndex) => {
+      activities.forEach((a, aIndex) => {
         try {
-          if (this.exercise && !exerciseFound && a.title.indexOf(this.exercise) >= 0) {
-            log(`\nLoading activity ${aIndex}:  ${a.title} ...\n`);
+          if (this.exercise && !exerciseFound && a.name.indexOf(this.exercise) >= 0) {
+            log(`\nLoading activity ${aIndex}:  ${a.name} ...\n`);
             exerciseFound = true;
+            this.loadViews(a);
+            this.loadMetadata(a);
             this.loadDrawing(a);
           } else {
-            log(`${aIndex}. ${a.title}`);
+            log(`${aIndex}. ${a.name}`);
           }
         } catch (e) {
           // In case of error (e.g. if there are unsupported layers), alert the user
-          if (a.title !== undefined) {
-            error('Error when loading the activity ' + a.title + ': ' + e.message);
+          if (a.name !== undefined) {
+            error('Error when loading the activity ' + a.name + ': ' + e.message);
           } else {
             error('Error: Unknown error while loading an activity.');
           }
@@ -119,47 +228,27 @@ export class Server {
       }
     };
 
-    // Failure call back that displays the HTTP error status to the user
-    var failure = function (err) {
-      error('Error while loading the activities list: ' + err.statusText);
-    };
-
-    /** Load the data using both call backs defined above.
-     * Listing everything from the last 200 hours as an example.
-     */
-    var timestamp = Date.now() - 200 * 3600 * 1000;
-    this.activitiesWS.loadData(success, failure, timestamp);
-  }
-
-  /**
-   * This function is called by the success callback of the loadActivities function above.
-   * It gets the data for the defined activity and reders it in the tree.
-   */
-  loadDrawing(activity: Activity) {
-    // Success callback that renders the drawing into the tree.
-    var success = (drawings: Drawings) => {
-      let col = drawings.toGeoJSONCollection(this.ticket);
-      // if (config.debugMode) {
-      //   log(JSON.stringify(col, null, 2));
-      // }
-      this.sink.send(col);
-      log(`Sinking ${Object.keys(col).length} collections: `);
-      log(`${Object.keys(col).map(k => `\t${k}`).join('\n')}`);
-      if (this.refreshTime) {
-        setTimeout(() => this.loadDrawing(activity), this.refreshTime * 1000);
-      } else {
-        // Allow node some time to save the files to disk.
-        setTimeout(() => process.exit(0), 30000);
-      }
-    };
-
     // Failure callback that displayes the HTTP error status to the user
-    var failure = (error) => {
-      log('Error when loading drawing: ' + error.statusText);
+    var failure = error => {
+      log('Error when loading metadata: ' + error.statusText);
     };
 
-    /** Load the drawing data using both callbacks and the activity id. */
-    this.drawingsWS.loadData(success, failure, activity.activity_id);
+    this.activitiesWS.loadData(
+      success,
+      failure,
+      {
+        category: 'RUNNING',
+        onlyNotRead: 'false',
+        onlyOwnOrganization: 'true',
+        onlyTemplate: 'false',
+        pagingCount: '15',
+        pagingStart: '0',
+        pollingReload: 'false',
+        searchQuery: '',
+        sortAscending: 'false',
+        sortField: 'MODIFIED'
+      },
+      this.cookie
+    );
   }
-
 }

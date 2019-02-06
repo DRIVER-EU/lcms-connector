@@ -165,7 +165,7 @@ export class AElement {
   //   return null;
   // }
 
-  public toGeoJSONFeature(ticket?: Ticket): GeoJSON.Feature<GeoJSON.GeometryObject> {
+  public toGeoJSONFeature(ticket?: Ticket | string): GeoJSON.Feature<GeoJSON.GeometryObject> {
     if (this.obj && this.obj.pointList) {
       const coords = this.obj.pointList.map(point => [point.x, point.y]);
       return <GeoJSON.Feature<GeoJSON.Polygon>>{
@@ -185,9 +185,9 @@ export class AElement {
     return this.geometry.clearBounds(), this.geometry.getBounds();
   }
 
-  protected downloadFile(filename: string, url: string, ticket: Ticket) {
+  protected downloadFile(filename: string, url: string, cookie: string) {
     let file = fs.createWriteStream(filename);
-    let req = request.get(url, {encoding: null, headers: {'Cookie': ticket.getCookie()}}, (err, response, body) => {
+    let req = request.get(url, {encoding: null, headers: {'Cookie': cookie}}, (err, response, body) => {
       if (err) {
         console.error(err);
         return;
@@ -560,7 +560,7 @@ export class Symbol extends AElement {
     return labelText;
   }
 
-  public toGeoJSONFeature(ticket: Ticket): GeoJSON.Feature<GeoJSON.GeometryObject> {
+  public toGeoJSONFeature(cookie: string): GeoJSON.Feature<GeoJSON.GeometryObject> {
     let properties: { [key: string]: any };
     if (this.parent) {
       properties = this.parent.attributes;
@@ -579,9 +579,8 @@ export class Symbol extends AElement {
         let filename = path.join(Symbol.settings.imageFolder, symbol);
         fs.exists(filename, exists => {
           Symbol.settings.addSymbol(symbol);
-          let cookie = ticket.getCookie();
           if (exists) return;
-          this.downloadFile(filename, this.externalImage, ticket);
+          this.downloadFile(filename, this.externalImage, cookie);
         });
       }
     }

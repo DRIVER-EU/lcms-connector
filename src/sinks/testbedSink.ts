@@ -119,7 +119,11 @@ export class TestbedSink extends Sink {
         Object.keys(f.properties).forEach(key => {
           const val = f.properties[key];
           f.properties[key] = {};
-          f.properties[key][`${typeof val}`] = val;
+          if (typeof val === 'object') {
+            f.properties[key][`string`] = JSON.stringify(val);
+          } else {
+            f.properties[key][`${typeof val}`] = val;
+          }
         });
       }
     });

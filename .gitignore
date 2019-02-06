@@ -9,3 +9,5 @@ icons
 local
 .vscode
 log.txt
+*.png
+API.md

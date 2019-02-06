@@ -4,7 +4,6 @@ export class AbstractWebService {
   public cookie: string = '';
   protected serverUrl: string;
   protected options: request.CoreOptions = {
-    method: 'POST',
     encoding: 'utf8',
     headers: {
       'Content-Type': 'application/json; charset=utf-8'
@@ -19,15 +18,26 @@ export class AbstractWebService {
     return this.serverUrl;
   }
 
-  public loadData(successCall: Function, errorCall: Function, msg: Object) {
-    let successCallback = (response) => {
+  public loadData(successCall: Function, errorCall: Function, msg: Object, cookie?: string, type: string = 'POST') {
+    let successCallback = response => {
       successCall(this.getRelevantData(response));
     };
 
+    this.options.method = type;
     this.options.body = JSON.stringify(msg);
-    request.post(this.getServiceSpecificUrl(), this.options, (error, res, body) => {
+    if (cookie) {
+      Object.assign(this.options.headers, {Cookie: cookie});
+    }
+    const url = this.getServiceSpecificUrl();
+    console.log(`Requesting '${url}' with cookie ${cookie}`);
+    request(url, this.options, (error, res, body) => {
       if (error) return errorCall(error);
-      this.cookie = res.headers['set-cookie'].find(h => h.indexOf('JSESSIONID') > -1);
+      if (res.request.href === 'https://oefen-veiligheidsregio.lcms.nl/lcms/gui/login') {
+        cookie = res.headers['set-cookie'].find(h => h.indexOf('JSESSIONID') > -1);
+        console.log(`Storing cookie '${cookie}' from url ${res.request.href}`);
+        successCallback({cookie: cookie});
+        return;
+      }
       successCallback(JSON.parse(body));
     });
   }
@@ -38,27 +48,30 @@ export class AbstractWebService {
 
   protected setup(url: string, username: string, password: string) {
     this.serverUrl = url;
-    this.options.auth = {
-      user: username,
-      pass: password
-    };
+    // this.options.auth = {
+    //   user: username,
+    //   pass: password
+    // };
   }
 
   protected getLocation(href: string) {
     var match = href.match(/^(https?\:)\/\/(([^:\/?#]*)(?:\:([0-9]+))?)([\/]{0,1}[^?#]*)(\?[^#]*|)(#.*|)$/);
-    return match && {
-      protocol: match[1],
-      host: match[2],
-      hostname: match[3],
-      port: match[4],
-      pathname: match[5],
-      search: match[6],
-      hash: match[7]
-    };
+    return (
+      match && {
+        protocol: match[1],
+        host: match[2],
+        hostname: match[3],
+        port: match[4],
+        pathname: match[5],
+        search: match[6],
+        hash: match[7]
+      }
+    );
   }
 
-  public getRelevantData(data) { return data; }
-
+  public getRelevantData(data) {
+    return data;
+  }
 }
 
 /*

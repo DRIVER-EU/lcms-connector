@@ -14,8 +14,8 @@ export class DrawingsWebService extends AbstractWebService {
     return Drawings.fromObject(data);
   }
 
-  public loadData(successCall: Function, errorCall: Function, activityId: string) {
-    super.loadData(successCall, errorCall, { activity_id: activityId });
+  public loadData(successCall: Function, errorCall: Function, activityId: string, cookie?: string) {
+    super.loadData(successCall, errorCall, { activity_id: activityId }, cookie);
   }
 
 }
