@@ -50,7 +50,8 @@ export interface IConfig {
     clientID: string;
     topicPrefix: string;
     testbedOptions?: ITestBedOptions;
-    topic: string;
+    plotTopic: string;
+    capTopic: string;
   };
   folder?: {
     data: string;

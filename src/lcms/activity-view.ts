@@ -1,3 +1,5 @@
+import {createDefaultCAPMessage, ICAPAlert} from '../models/cap';
+
 export interface IActivityView {
   id: string;
   domainCode: string;
@@ -59,5 +61,12 @@ export class ActivityView implements IActivityView {
       obj.lastStructuralChangeTime,
       obj.visible
     );
+  }
+
+  public toCAPMessages(senderId: string) {
+    let capMsg: ICAPAlert = createDefaultCAPMessage(senderId);
+    capMsg.info.headline = this.screenTitle;
+    capMsg.info.area.areaDesc = this.viewCategory;
+    return capMsg;
   }
 }

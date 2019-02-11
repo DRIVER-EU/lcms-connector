@@ -1,6 +1,7 @@
 import {ProduceRequest, TestBedAdapter, ITestBedOptions} from 'node-test-bed-adapter';
 import {Sink} from './sink';
 import {FeatureCollection} from 'geojson';
+import {ICAPAlert} from '../models/cap';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -14,14 +15,16 @@ const log = console.log.bind(console),
 export class TestbedSink extends Sink {
   private id = 'lcms-plotter';
   private adapter: TestBedAdapter;
-  private topic: string = 'lcms_plots';
+  private plotTopic: string = 'lcms_plots';
+  private capTopic: string = 'standard_cap';
   private queue: ProduceRequest[] = [];
 
-  constructor(options: ITestBedOptions, topic: string) {
+  constructor(options: ITestBedOptions, plotTopic: string, capTopic: string) {
     super();
     options.clientId = options.clientId || this.id;
     this.id = options.clientId;
-    this.topic = topic || this.topic;
+    this.plotTopic = plotTopic || this.plotTopic;
+    this.capTopic = capTopic || this.capTopic;
     this.adapter = new TestBedAdapter(options);
     this.adapter.on('error', e => {
       log_error(e);
@@ -50,18 +53,34 @@ export class TestbedSink extends Sink {
       });
   }
 
-  protected createTopicName(key: string) {
-    return this.topic;
+  protected createTopicName(type: 'cap' | 'geojson') {
+    switch (type) {
+      case 'cap':
+        return this.capTopic;
+        break;
+      case 'geojson':
+        return this.plotTopic;
+      default:
+        log_error(`Could not obtain topic`);
+        return '';
+        break;
+    }
   }
 
   protected sendData(key: string, geoJson: FeatureCollection) {
     this.processQueue();
-    let topic = this.createTopicName(key);
+    let topic = this.createTopicName('geojson');
     this.publish(topic, geoJson);
   }
 
+  protected sendCAPData(key: string, cap: ICAPAlert) {
+    this.processQueue();
+    let topic = this.createTopicName('cap');
+    this.publish(topic, cap);
+  }
+
   protected deleteData(key: string) {
-    let topic = this.createTopicName(key);
+    let topic = this.createTopicName('geojson');
     this.publish(topic);
   }
 
@@ -85,8 +104,8 @@ export class TestbedSink extends Sink {
    *
    * @memberOf Router
    */
-  private publish(topic: string, geoJson?: FeatureCollection) {
-    const payload = this.createProduceRequest(topic, geoJson);
+  private publish(topic: string, data?: FeatureCollection | ICAPAlert) {
+    const payload = this.createProduceRequest(topic, data);
     if (!this.adapter || !this.adapter.isConnected) {
       log(`Adapter not ready, add GeoJSON file to queue (at position: ${this.queue.length}).`);
       this.queue.push(payload);
@@ -95,38 +114,44 @@ export class TestbedSink extends Sink {
     this.sendPayload(payload);
   }
 
-  private createProduceRequest(topic: string, geoJson?: FeatureCollection): ProduceRequest {
-    this.wrapUnionFieldsOfGeojson(geoJson);
+  private createProduceRequest(topic: string, data?: FeatureCollection | ICAPAlert): ProduceRequest {
+    this.wrapUnionFieldsOfGeojson(data);
     const payload: ProduceRequest = {
       topic: topic,
       partition: 0,
-      messages: geoJson,
+      messages: data,
       attributes: 1
     };
     return payload;
   }
 
-  private wrapUnionFieldsOfGeojson(geoJson: FeatureCollection) {
-    if (!geoJson || !geoJson.features) return;
-    geoJson.features.forEach(f => {
-      if (f && f.geometry && f.geometry && Object.keys(f.geometry).length > 1) {
-        const geom = JSON.parse(JSON.stringify(f.geometry));
-        delete f.geometry;
-        f.geometry = {} as any;
-        f.geometry[`eu.driver.model.geojson.${geom.type}`] = geom;
-      }
-      if (f && f.properties && Object.keys(f.properties).length > 0) {
-        Object.keys(f.properties).forEach(key => {
-          const val = f.properties[key];
-          f.properties[key] = {};
-          if (typeof val === 'object') {
-            f.properties[key][`string`] = JSON.stringify(val);
-          } else {
-            f.properties[key][`${typeof val}`] = val;
-          }
-        });
-      }
-    });
+  private wrapUnionFieldsOfGeojson(data: FeatureCollection | ICAPAlert) {
+    if (!data) return;
+    if (data.hasOwnProperty('features')) {
+      const geoJson = data as FeatureCollection;
+      geoJson.features.forEach(f => {
+        if (f && f.geometry && f.geometry && Object.keys(f.geometry).length > 1) {
+          const geom = JSON.parse(JSON.stringify(f.geometry));
+          delete f.geometry;
+          f.geometry = {} as any;
+          f.geometry[`eu.driver.model.geojson.${geom.type}`] = geom;
+        }
+        if (f && f.properties && Object.keys(f.properties).length > 0) {
+          Object.keys(f.properties).forEach(key => {
+            const val = f.properties[key];
+            f.properties[key] = {};
+            if (typeof val === 'object') {
+              f.properties[key][`string`] = JSON.stringify(val);
+            } else {
+              f.properties[key][`${typeof val}`] = val;
+            }
+          });
+        }
+      });
+    }
+    if (data.hasOwnProperty('identifier')) {
+      const cap = data as ICAPAlert;
+    }
   }
 
   private sendPayload(payload: ProduceRequest) {

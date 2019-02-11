@@ -59,6 +59,13 @@ export interface ICommandLineOptions {
    * @memberOf ICommandLineOptions
    */
   refresh: number;
+  /**
+   * Use the debug mode
+   * 
+   * @type {boolean}
+   * @memberOf ICommandLineOptions
+   */
+  debug: boolean;
 }
 
 export class CommandLineInterface {
@@ -73,7 +80,8 @@ export class CommandLineInterface {
     { name: 'folder', alias: 'f', type: String, multiple: false, typeLabel: '[underline]{Output folder}', description: 'For saving the GeoJSON files (default ./data).' },
     { name: 'image', alias: 'i', type: String, multiple: false, typeLabel: '[underline]{Image folder}', description: 'For saving the image files (default ./images).' },
     { name: 'username', alias: 'u', type: String, multiple: false, typeLabel: '[underline]{Username}', description: 'If given, overrides the name specified in config.json.' },
-    { name: 'password', alias: 'p', type: String, multiple: false, typeLabel: '[underline]{Password}', description: 'LCMS password for the user (as specified in config.json).' }
+    { name: 'password', alias: 'p', type: String, multiple: false, typeLabel: '[underline]{Password}', description: 'LCMS password for the user (as specified in config.json).' },
+    { name: 'debug', alias: 'd', type: Boolean, multiple: false, typeLabel: '[underline]{Use debug mode}', description: 'Write debug output to files.' }
   ];
 
   static sections = [{

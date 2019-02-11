@@ -14,7 +14,7 @@
       "wrapUnions": false,
       "clientId": "lcms-plotter",
       "consume": [],
-      "produce": ["lcms_plots"],
+      "produce": ["lcms_plots", "standard_cap"],
       "autoRegisterSchemas": true,
       "schemaFolder": "./schemas",
       "fromOffset": true,
@@ -25,7 +25,8 @@
         "logFile": "log.txt"
       }
     },
-    "topic": "lcms_plots"
+    "logTopic": "lcms_plots",
+    "capTopic": "standard_cap"
   },
   "folder": {
     "data": "data",

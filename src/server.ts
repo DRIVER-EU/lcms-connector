@@ -16,6 +16,9 @@ import {Drawings} from './lcms/drawings';
 import {Sink} from './sinks/sink';
 import {FolderSink} from './sinks/folderSink';
 import {TestbedSink} from './sinks/testbedSink';
+import {ActivityView} from './lcms/activity-view';
+import {ActivityViewContent} from './lcms/activity-view-content';
+import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-service';
 
 const publicConfig: IConfig = require(path.resolve('config.json'));
 const localConfig: IConfig = require(path.resolve('./local/config.json'));
@@ -38,10 +41,13 @@ export class Server {
   private loginWS: LoginWebService;
   private activitiesWS: ActivityWebService;
   private activityViewsWS: ActivityViewsWebService;
+  private activityViewContentsWS: ActivityViewContentsWebService;
   private activityMetadataWS: ActivityMetadataWebService;
   private drawingsWS: DrawingsWebService;
   private exercise: string;
   private cookie: string;
+  private debugMode: boolean = false;
+  private id: string = '';
 
   /** The following variables are responsible for holding the ticket object, list
    * of available drawings and list of currently selected layers.
@@ -69,6 +75,7 @@ export class Server {
     let dataFolder = options.folder || (config.folder && config.folder.data) || 'data';
     let imageFolder = options.image || (config.folder && config.folder.images) || 'images';
     this.refreshTime = options.refresh || 0;
+    this.debugMode = options.debug || false;
 
     if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder);
     if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
@@ -76,7 +83,8 @@ export class Server {
     Settings.getInstance().imageFolder = imageFolder;
 
     if (options.kafka && config.kafka) {
-      this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.topic);
+      this.id = config.kafka.testbedOptions.clientId;
+      this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.plotTopic, config.kafka.capTopic);
     } else {
       this.sink = new FolderSink(dataFolder, imageFolder);
     }
@@ -86,12 +94,10 @@ export class Server {
   }
 
   initialize(serverUrl: string, username: string, password: string) {
-    // Set up both web services.
-    // activitiesWS.setUp(serverUrl, username, password);
-    // drawingsWS.setUp(serverUrl, username, password);
     this.loginWS = new LoginWebService(serverUrl, username, password);
     this.activitiesWS = new ActivityWebService(serverUrl, username, password);
     this.activityViewsWS = new ActivityViewsWebService(serverUrl, username, password);
+    this.activityViewContentsWS = new ActivityViewContentsWebService(serverUrl, username, password);
     this.activityMetadataWS = new ActivityMetadataWebService(serverUrl, username, password);
     this.drawingsWS = new DrawingsWebService(serverUrl, username, password);
 
@@ -133,7 +139,7 @@ export class Server {
         setTimeout(() => this.loadDrawing(activity), this.refreshTime * 1000);
       } else {
         // Allow node some time to save the files to disk.
-        setTimeout(() => process.exit(0), 30000);
+        setTimeout(() => process.exit(0), 60000);
       }
     };
 
@@ -150,14 +156,45 @@ export class Server {
    * This function is called by the success callback of the loadActivities function above.
    * It gets the views for the defined activity and renders it in the tree.
    */
-  loadViews(activity: Activity) {
+  loadViewOverview(activity: Activity, cb: (views: ActivityView[]) => void) {
     // Success callback that renders the drawing into the tree.
     var success = (views: any) => {
       let col = JSON.stringify(views) as any;
+      if (this.debugMode) {
+        console.log('VIEWS');
+        console.log(col);
+      }
+      cb(views.views);
+    };
 
-      // this.sink.send(col);
+    // Failure callback that displayes the HTTP error status to the user
+    var failure = error => {
+      log('Error when loading views: ' + error.statusText);
+      cb(null);
+    };
 
-      log(`Sinking ${views.length} collections: `);
+    /** Load the drawing data using both callbacks and the activity id. */
+    this.activityViewsWS.loadData(success, failure, {activityId: activity.id}, this.cookie);
+  }
+
+  /**
+   * This function is called by the success callback of the loadActivities function above.
+   * It gets the views for the defined activity and renders it in the tree.
+   */
+  loadView(activity: Activity, view: ActivityView) {
+    // Success callback that renders the drawing into the tree.
+    var success = (view: ActivityView) => {
+      if (!view) return;
+      let col = JSON.stringify(view) as any;
+      if (this.debugMode) {
+        console.log('VIEW CONTENTS');
+        console.log(col);
+      }
+      if (view.viewCategory === 'SITUATIEBEELD') {
+        const cap = view.toCAPMessages(this.id);
+        console.log(cap);
+        this.sink.sendCAP({'cap': cap});
+      }
     };
 
     // Failure callback that displayes the HTTP error status to the user
@@ -166,7 +203,7 @@ export class Server {
     };
 
     /** Load the drawing data using both callbacks and the activity id. */
-    this.activityViewsWS.loadData(success, failure, {activityId: activity.id}, this.cookie);
+    this.activityViewContentsWS.loadData(success, failure, {activityId: activity.id, viewId: view.id, viewChangeData: {changedFieldsByUser: [], lastChangeTime: Date.now()}}, this.cookie);
   }
 
   /**
@@ -177,7 +214,10 @@ export class Server {
     // Success callback that renders the drawing into the tree.
     var success = (metadata: any) => {
       let col = metadata;
-
+      if (this.debugMode) {
+        console.log('METADATA');
+        console.log(col);
+      }
       // this.sink.send(col);
 
       log(`Sinking ${Object.keys(col).length} collections: `);
@@ -206,9 +246,15 @@ export class Server {
           if (this.exercise && !exerciseFound && a.name.indexOf(this.exercise) >= 0) {
             log(`\nLoading activity ${aIndex}:  ${a.name} ...\n`);
             exerciseFound = true;
-            this.loadViews(a);
             this.loadMetadata(a);
             this.loadDrawing(a);
+            this.loadViewOverview(a, views => {
+              if (views) {
+                views.forEach(view => {
+                  this.loadView(a, view);
+                });
+              }
+            });
           } else {
             log(`${aIndex}. ${a.name}`);
           }
