@@ -28,6 +28,13 @@ export class FolderSink extends Sink {
     });
   }
 
+  protected sendCAPData(key: string, cap: Object) {
+    let filename = this.createFilename(key);
+    fs.writeFile(filename, JSON.stringify(cap), err => {
+      if (err) console.error(`Error saving ${filename}: ${err.message}!`);
+    });
+  }
+
   protected deleteData(key: string) {
     let filename = this.createFilename(key);
     fs.unlink(filename, err => {

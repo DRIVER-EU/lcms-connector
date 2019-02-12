@@ -20,8 +20,14 @@ import {ActivityView} from './lcms/activity-view';
 import {ActivityViewContent} from './lcms/activity-view-content';
 import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-service';
 
-const publicConfig: IConfig = require(path.resolve('config.json'));
+if (!fs.existsSync('./local')) {
+  fs.mkdirSync('./local');
+}
+if (!fs.existsSync('./local/config.json')) {
+  fs.writeFileSync('./local/config.json', '{}', 'utf8');
+}
 const localConfig: IConfig = require(path.resolve('./local/config.json'));
+const publicConfig: IConfig = require(path.resolve('config.json'));
 const config: IConfig = Object.assign(publicConfig, localConfig);
 
 const log = console.log;
@@ -193,7 +199,7 @@ export class Server {
       if (view.viewCategory === 'SITUATIEBEELD') {
         const cap = view.toCAPMessages(this.id);
         console.log(cap);
-        this.sink.sendCAP({'cap': cap});
+        this.sink.sendCAP({cap: cap});
       }
     };
 
