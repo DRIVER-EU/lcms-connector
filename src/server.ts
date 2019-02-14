@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as express from 'express';
 import {ICommandLineOptions} from './cli';
 import {IConfig} from './models/config';
 import {Settings} from './models/settings';
@@ -43,6 +44,8 @@ const error = console.error;
 // const activitiesWS = new LCMS.ActivityWebService();
 // const drawingsWS = new LCMS.DrawingWebService();
 
+const SERVER_PORT: number = +process.env['SERVER_PORT'] || 5000;
+
 export class Server {
   private loginWS: LoginWebService;
   private activitiesWS: ActivityWebService;
@@ -53,7 +56,9 @@ export class Server {
   private exercise: string;
   private cookie: string;
   private debugMode: boolean = false;
+  private serverMode: boolean = false;
   private id: string = '';
+  private consumeDisciplines: string[] = [];
 
   /** The following variables are responsible for holding the ticket object, list
    * of available drawings and list of currently selected layers.
@@ -73,7 +78,7 @@ export class Server {
   private refreshTime: number;
 
   constructor(options?: ICommandLineOptions) {
-    log('Starting server...');
+    log('Starting...');
     process.on('SIGINT', () => {
       process.exit(0);
     });
@@ -82,6 +87,8 @@ export class Server {
     let imageFolder = options.image || (config.folder && config.folder.images) || 'images';
     this.refreshTime = options.refresh || 0;
     this.debugMode = options.debug || false;
+    this.serverMode = options.serverMode || false;
+    this.consumeDisciplines = config.lcms ? config.lcms.consumeDisciplines : [];
 
     if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder);
     if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
@@ -106,18 +113,42 @@ export class Server {
     this.activityViewContentsWS = new ActivityViewContentsWebService(serverUrl, username, password);
     this.activityMetadataWS = new ActivityMetadataWebService(serverUrl, username, password);
     this.drawingsWS = new DrawingsWebService(serverUrl, username, password);
+    this.login(serverUrl, (err?: string) => {
+      if (err) {
+        console.error('Error logging in: ' + err);
+        process.exit(1);
+      }
+      console.log('Login success');
+      if (this.serverMode) {
+        this.startServer();
+      } else {
+        this.loadActivities();
+      }
+    });
+  }
 
-    log('Loading activities from server ' + serverUrl + '\n');
+  private startServer() {
+    const app = express();
+    app.get('/update', (req, res) => {
+      this.loadActivities();
+      res.send('Publishing activities');
+    });
+    app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));
+  }
+
+  private login(serverUrl: string, cb: Function) {
+    log('Logging in on server ' + serverUrl + '\n');
 
     var success = (cookie: string) => {
       log(`Stored cookie: ${cookie}`);
       this.cookie = cookie;
-      this.loadActivities();
+      cb();
     };
 
     // Failure call back that displays the HTTP error status to the user
     var failure = err => {
       error('Error while logging in: ' + JSON.stringify(err));
+      cb(err);
     };
 
     /** Load the data using both call backs defined above.*/
@@ -145,7 +176,7 @@ export class Server {
         setTimeout(() => this.loadDrawing(activity), this.refreshTime * 1000);
       } else {
         // Allow node some time to save the files to disk.
-        setTimeout(() => process.exit(0), 60000);
+        // setTimeout(() => process.exit(0), 60000);
       }
     };
 
@@ -189,16 +220,16 @@ export class Server {
    */
   loadView(activity: Activity, view: ActivityView) {
     // Success callback that renders the drawing into the tree.
-    var success = (view: ActivityView) => {
-      if (!view) return;
-      let col = JSON.stringify(view) as any;
+    var success = (viewContent: ActivityViewContent) => {
+      if (!viewContent) return;
+      let col = JSON.stringify(viewContent) as any;
       if (this.debugMode) {
         console.log('VIEW CONTENTS');
         console.log(col);
       }
-      if (view.viewCategory === 'SITUATIEBEELD') {
-        const cap = view.toCAPMessages(this.id);
-        console.log(cap);
+      if (this.consumeDisciplines.indexOf(viewContent.screenTitle.toUpperCase()) >= 0) {
+        const cap = viewContent.toCAPMessages(this.id);
+        console.log(JSON.stringify(cap, null, 2));
         this.sink.sendCAP({cap: cap});
       }
     };
@@ -254,9 +285,9 @@ export class Server {
             exerciseFound = true;
             this.loadMetadata(a);
             this.loadDrawing(a);
-            this.loadViewOverview(a, views => {
+            this.loadViewOverview(a, (views: ActivityView[]) => {
               if (views) {
-                views.forEach(view => {
+                views.forEach((view: ActivityView) => {
                   this.loadView(a, view);
                 });
               }

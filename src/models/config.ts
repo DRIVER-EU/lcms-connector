@@ -8,6 +8,14 @@ import {ITestBedOptions} from 'node-test-bed-adapter';
  */
 export interface IConfig {
   /**
+   * If true, start tool in server mode.
+   * Otherwise, send the LCMS information once, then quit.
+   *
+   * @type {boolean}
+   * @memberOf IConfig
+   */
+  serverMode?: boolean;
+  /**
    * If true, show more debug output.
    *
    * @type {boolean}
@@ -44,6 +52,13 @@ export interface IConfig {
      * @type {string}
      */
     serverUrl: string;
+    /**
+     * Disciplines of the LCMS activity to publish on CAP
+     * (provide titles in full CAPS)
+     *
+     * @type {string[]}
+     */
+    consumeDisciplines: string[];
   };
   kafka?: {
     zookeeperUrl: string;

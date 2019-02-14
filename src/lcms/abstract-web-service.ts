@@ -48,10 +48,6 @@ export class AbstractWebService {
 
   protected setup(url: string, username: string, password: string) {
     this.serverUrl = url;
-    // this.options.auth = {
-    //   user: username,
-    //   pass: password
-    // };
   }
 
   protected getLocation(href: string) {

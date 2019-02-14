@@ -3,15 +3,19 @@
   "refreshTime": 0,
   "lcms": {
     "username": "15-vullingse",
-    "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms"
+    "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms",
+    "consumeDisciplines": ["MELDKAMER", "COPI"]
   },
   "kafka": {
     "testbedOptions": {
       "kafkaHost": "localhost:3501",
       "schemaRegistry": "http://localhost:3502",
+      "kafkaHost": "tb4.driver-testbed.eu:3541",
+      "schemaRegistry": "http://tb4.driver-testbed.eu:3542",
       "fetchAllSchemas": false,
       "fetchAllVersions": false,
-      "wrapUnions": false,
+      "ignoreTimeTopic": true,
+      "wrapUnions": "auto",
       "clientId": "lcms-plotter",
       "consume": [],
       "produce": ["lcms_plots", "standard_cap"],

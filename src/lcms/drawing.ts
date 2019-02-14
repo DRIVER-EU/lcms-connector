@@ -2,6 +2,7 @@ import {Wind} from './wind';
 import {TopicLayer} from './topic-layer';
 import * as LCMS from './lcms';
 import {Ticket} from './ticket';
+import {INamedGeoJSON} from './named-geojson';
 
 export class Drawing {
   public map: {[key: string]: TopicLayer};
@@ -27,10 +28,12 @@ export class Drawing {
    * @memberOf Drawing
    */
   public toGeoJSONCollection(ticket: Ticket) {
-    let col: {[key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject>} = {};
+    let col: {[key: string]: INamedGeoJSON} = {};
     this.topicLayers.forEach(tl => {
       if (!tl.id) return;
-      let geoJson = <GeoJSON.FeatureCollection<GeoJSON.GeometryObject>>{
+      let geoJson: INamedGeoJSON = {
+        guid: tl.id,
+        title: tl.name,
         type: 'FeatureCollection',
         features: []
       };

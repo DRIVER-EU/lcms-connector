@@ -1,6 +1,5 @@
 import {AbstractWebService} from './abstract-web-service';
-import {Ticket} from './ticket';
-import {ActivityView} from './activity-view';
+import {ActivityViewContent} from './activity-view-content';
 
 export class ActivityViewContentsWebService extends AbstractWebService {
   constructor(protected url: string, protected username: string, protected password: string) {
@@ -11,12 +10,12 @@ export class ActivityViewContentsWebService extends AbstractWebService {
     return this.serverUrl + '/gui/getactivityview';
   }
 
-  public getRelevantData(data: ActivityView) {
+  public getRelevantData(data: ActivityViewContent) {
     if (!data || !data.viewCategory) {
       console.error('No views in response data: ' + JSON.stringify(data));
       return null;
     }
-    return ActivityView.fromObject(data);
+    return ActivityViewContent.fromObject(data);
   }
 
   public loadData(successCall: Function, errorCall: Function, msg: Object, cookie?: string) {

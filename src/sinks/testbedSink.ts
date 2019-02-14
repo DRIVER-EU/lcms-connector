@@ -1,4 +1,4 @@
-import {ProduceRequest, TestBedAdapter, ITestBedOptions} from 'node-test-bed-adapter';
+import {ProduceRequest, TestBedAdapter, ITestBedOptions, IAdapterMessage} from 'node-test-bed-adapter';
 import {Sink} from './sink';
 import {FeatureCollection} from 'geojson';
 import {ICAPAlert} from '../models/cap';
@@ -30,7 +30,7 @@ export class TestbedSink extends Sink {
       log_error(e);
     });
     this.adapter.on('ready', () => {
-      log('Producer is connected');
+      console.log('Producer is connected');
       this.processQueue();
     });
     this.connectAdapter(options);
@@ -40,7 +40,8 @@ export class TestbedSink extends Sink {
     this.adapter
       .connect()
       .then(() => {
-        log(`Initialized test-bed-adapter correctly`);
+        console.log(`Initialized test-bed-adapter correctly`);
+        this.adapter.on('message', message => this.handleMessage(message));
       })
       .catch(err => {
         log_error(`Initializing test-bed-adapter failed: ${err}`);
@@ -162,5 +163,23 @@ export class TestbedSink extends Sink {
         return;
       }
     });
+  }
+
+  private handleMessage(message: IAdapterMessage) {
+    const stringify = (m: string | Object) => typeof m === 'string' ? m : JSON.stringify(m, null, 2);
+    switch (message.topic.toLowerCase()) {
+      case 'system_heartbeat':
+        // log.info(`Received heartbeat message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        break;
+      case 'system_configuration':
+        // log.info(`Received configuration message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        break;
+      case 'standard_cap':
+        log.info(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        break;
+      default:
+        log.info(`Received ${message.topic} message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        break;
+    }
   }
 }

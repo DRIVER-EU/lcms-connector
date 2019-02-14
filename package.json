@@ -17,6 +17,7 @@
     "@types/lodash": "^4.14.120",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
+    "express": "^4.16.4",
     "lodash": "4.17.11",
     "node-test-bed-adapter": "^0.7.4",
     "pretty-data": "^0.40.0",

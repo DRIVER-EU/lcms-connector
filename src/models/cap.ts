@@ -30,6 +30,12 @@ export interface ICAPInfo {
   responseType?: string;
   instruction?: string;
   area: ICAPArea;
+  parameter?: IValueNamePair;
+}
+
+export interface IValueNamePair {
+  valueName: string;
+  value: string;
 }
 
 export interface ICAPArea {
@@ -40,7 +46,7 @@ export interface ICAPArea {
 
 export function createDefaultCAPMessage(senderId: string): ICAPAlert {
   var alertMsg: ICAPAlert = {
-    identifier: senderId,
+    identifier: `${Date.now()}-${senderId}`,
     sender: senderId,
     sent: convertDateToCAPDate(new Date()), //'2016-03-31T11:33:00+02:00',//(new Date().toISOString()).replace('Z','+02:00'),
     status: 'Test',

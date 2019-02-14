@@ -14,6 +14,24 @@
       "default": "FeatureCollection"
     },
     {
+      "name": "guid",
+      "type": [
+        "null",
+        "string"
+      ],
+      "doc": "Globally unique identifier for this entity",
+      "default": null
+    },
+    {
+      "name": "title",
+      "type": [
+        "null",
+        "string"
+      ],
+      "doc": "Display title for this entity",
+      "default": null
+    },
+    {
       "name": "bbox",
       "type": [
         "null",
@@ -70,6 +88,7 @@
                     "fields": [
                       {
                         "name": "type",
+
                         "type": {
                           "type": "enum",
                           "name": "PointType",
