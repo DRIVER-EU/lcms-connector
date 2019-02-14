@@ -1,7 +1,11 @@
 import {ProduceRequest, TestBedAdapter, ITestBedOptions, IAdapterMessage} from 'node-test-bed-adapter';
 import {Sink} from './sink';
 import {FeatureCollection} from 'geojson';
-import {ICAPAlert} from '../models/cap';
+import {ICAPAlert, IValueNamePair} from '../models/cap';
+import {ILargeDataUpdate} from '../models/ldu';
+import * as axios from 'axios';
+import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
+import {IEditViewContent} from '../lcms/edit-view-content';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -13,11 +17,12 @@ const log = console.log.bind(console),
  * @class TestbedSink
  */
 export class TestbedSink extends Sink {
-  private id = 'lcms-plotter';
+  private id = 'lcms';
   private adapter: TestBedAdapter;
   private plotTopic: string = 'lcms_plots';
   private capTopic: string = 'standard_cap';
   private queue: ProduceRequest[] = [];
+  private activityPostContentsWS: ActivityPostContentsWebService;
 
   constructor(options: ITestBedOptions, plotTopic: string, capTopic: string) {
     super();
@@ -34,6 +39,14 @@ export class TestbedSink extends Sink {
       this.processQueue();
     });
     this.connectAdapter(options);
+  }
+
+  public canPost() {
+    return true;
+  }
+
+  public setPostService(svc: ActivityPostContentsWebService) {
+    this.activityPostContentsWS = svc;
   }
 
   private connectAdapter(options: ITestBedOptions, retries: number = 0) {
@@ -72,6 +85,11 @@ export class TestbedSink extends Sink {
     this.processQueue();
     let topic = this.createTopicName('geojson');
     this.publish(topic, geoJson);
+
+    //// TODO: REMOVE!!
+    setTimeout(() => {
+      this.publishToLCMS('test-organisation', 'test-content');
+    }, 5000);
   }
 
   protected sendCAPData(key: string, cap: ICAPAlert) {
@@ -166,7 +184,7 @@ export class TestbedSink extends Sink {
   }
 
   private handleMessage(message: IAdapterMessage) {
-    const stringify = (m: string | Object) => typeof m === 'string' ? m : JSON.stringify(m, null, 2);
+    const stringify = (m: string | Object) => (typeof m === 'string' ? m : JSON.stringify(m, null, 2));
     switch (message.topic.toLowerCase()) {
       case 'system_heartbeat':
         // log.info(`Received heartbeat message with key ${stringify(message.key)}: ${stringify(message.value)}`);
@@ -175,11 +193,51 @@ export class TestbedSink extends Sink {
         // log.info(`Received configuration message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
       case 'standard_cap':
-        log.info(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        log(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        this.handleCAPMessage(message);
+        break;
+      case 'flood_actual':
+        log(`Received flood_actual message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        this.handleLargDataMessage(message);
         break;
       default:
-        log.info(`Received ${message.topic} message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        log(`Received ${message.topic} message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
     }
+  }
+
+  private handleCAPMessage(message: IAdapterMessage) {
+    const msg: ICAPAlert = message.value as ICAPAlert;
+    const organisation: string = msg.sender;
+    const content: string = this.getParameterValue(msg.info.parameter);
+    // this.publishToLCMS(organisation, content);
+  }
+
+  private getParameterValue(parameter: IValueNamePair): string {
+    if (!parameter || !parameter.value) return '';
+    return parameter.value;
+  }
+
+  private handleLargDataMessage(message: IAdapterMessage) {
+    const msg: ILargeDataUpdate = message.value as ILargeDataUpdate;
+    axios.default
+      .get(msg.url)
+      .then((data: any) => {
+        console.log(`Downloaded ${msg.title} ${msg.dataType}:`);
+        console.log(data);
+      })
+      .catch(err => console.error(err));
+  }
+
+  private publishToLCMS(organisation: string, content: string) {
+    var success = (data: string) => {
+      log(`Sent data: ${data}`);
+    };
+
+    var error = (err: string) => {
+      log(`Error sending data: ${err}`);
+    };
+
+    this.activityPostContentsWS.loadData(success, error, {newContents: content} as IEditViewContent);
   }
 }

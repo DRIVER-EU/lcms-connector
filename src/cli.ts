@@ -72,7 +72,7 @@ export interface ICommandLineOptions {
    * @type {boolean}
    * @memberOf ICommandLineOptions
    */
-  serverMode: boolean;
+  server: boolean;
 }
 
 export class CommandLineInterface {

@@ -20,6 +20,7 @@ import {TestbedSink} from './sinks/testbedSink';
 import {ActivityView} from './lcms/activity-view';
 import {ActivityViewContent} from './lcms/activity-view-content';
 import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-service';
+import {ActivityPostContentsWebService} from './lcms/activity-post-contents-web-service';
 
 if (!fs.existsSync('./local')) {
   fs.mkdirSync('./local');
@@ -51,6 +52,7 @@ export class Server {
   private activitiesWS: ActivityWebService;
   private activityViewsWS: ActivityViewsWebService;
   private activityViewContentsWS: ActivityViewContentsWebService;
+  private activityPostContentsWS: ActivityPostContentsWebService;
   private activityMetadataWS: ActivityMetadataWebService;
   private drawingsWS: DrawingsWebService;
   private exercise: string;
@@ -87,7 +89,7 @@ export class Server {
     let imageFolder = options.image || (config.folder && config.folder.images) || 'images';
     this.refreshTime = options.refresh || 0;
     this.debugMode = options.debug || false;
-    this.serverMode = options.serverMode || false;
+    this.serverMode = options.server || false;
     this.consumeDisciplines = config.lcms ? config.lcms.consumeDisciplines : [];
 
     if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder);
@@ -113,6 +115,11 @@ export class Server {
     this.activityViewContentsWS = new ActivityViewContentsWebService(serverUrl, username, password);
     this.activityMetadataWS = new ActivityMetadataWebService(serverUrl, username, password);
     this.drawingsWS = new DrawingsWebService(serverUrl, username, password);
+
+    if (this.sink && this.sink.canPost()) {
+      this.activityPostContentsWS = new ActivityPostContentsWebService(serverUrl, username, password);
+      this.sink.setPostService(this.activityPostContentsWS);
+    }
     this.login(serverUrl, (err?: string) => {
       if (err) {
         console.error('Error logging in: ' + err);
@@ -228,6 +235,9 @@ export class Server {
         console.log(col);
       }
       if (this.consumeDisciplines.indexOf(viewContent.screenTitle.toUpperCase()) >= 0) {
+        this.activityPostContentsWS.setActivity(activity.id);
+        this.activityPostContentsWS.setField(viewContent.fields[0].id);
+        this.activityPostContentsWS.setCookie(this.cookie);
         const cap = viewContent.toCAPMessages(this.id);
         console.log(JSON.stringify(cap, null, 2));
         this.sink.sendCAP({cap: cap});

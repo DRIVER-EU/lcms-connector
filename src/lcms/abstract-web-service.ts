@@ -14,6 +14,10 @@ export class AbstractWebService {
     this.setup(url, username, password);
   }
 
+  public setCookie(cookie: string) {
+    this.cookie = cookie;
+  }
+
   public getServerUrl() {
     return this.serverUrl;
   }

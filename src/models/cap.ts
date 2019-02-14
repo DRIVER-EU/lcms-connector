@@ -1,3 +1,5 @@
+import {uuid4} from 'node-test-bed-adapter';
+
 export interface CAPObject {
   properties: _.Dictionary<any>;
   area: any;
@@ -29,7 +31,7 @@ export interface ICAPInfo {
   expires?: string;
   responseType?: string;
   instruction?: string;
-  area: ICAPArea;
+  area?: ICAPArea;
   parameter?: IValueNamePair;
 }
 
@@ -46,7 +48,7 @@ export interface ICAPArea {
 
 export function createDefaultCAPMessage(senderId: string): ICAPAlert {
   var alertMsg: ICAPAlert = {
-    identifier: `${Date.now()}-${senderId}`,
+    identifier: uuid4(),
     sender: senderId,
     sent: convertDateToCAPDate(new Date()), //'2016-03-31T11:33:00+02:00',//(new Date().toISOString()).replace('Z','+02:00'),
     status: 'Test',
@@ -59,10 +61,7 @@ export function createDefaultCAPMessage(senderId: string): ICAPAlert {
       urgency: 'Immediate',
       severity: 'Severe',
       certainty: 'Observed',
-      headline: 'Headline',
-      area: {
-        areaDesc: 'Testarea'
-      }
+      headline: 'Headline'
     }
   };
   return alertMsg;

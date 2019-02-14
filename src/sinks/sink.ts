@@ -1,5 +1,6 @@
 import {FeatureCollection} from 'geojson';
 import {ICAPAlert} from '../models/cap';
+import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
 
 /**
  * The Sink class offers an endpoint to the received data. It should be overriden, e.g. to save the data to a folder, or publish it to Kafka.
@@ -147,4 +148,10 @@ export class Sink {
       return false;
     }
   }
+
+  public canPost() {
+    return false;
+  }
+
+  public setPostService(svc: ActivityPostContentsWebService) {}
 }

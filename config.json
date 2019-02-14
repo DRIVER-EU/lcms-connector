@@ -4,7 +4,7 @@
   "lcms": {
     "username": "15-vullingse",
     "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms",
-    "consumeDisciplines": ["MELDKAMER", "COPI"]
+    "consumeDisciplines": ["MELDKAMER"]
   },
   "kafka": {
     "testbedOptions": {
@@ -16,8 +16,8 @@
       "fetchAllVersions": false,
       "ignoreTimeTopic": true,
       "wrapUnions": "auto",
-      "clientId": "lcms-plotter",
-      "consume": [],
+      "clientId": "lcms",
+      "consume": [{"topic": "standard_cap"}],
       "produce": ["lcms_plots", "standard_cap"],
       "autoRegisterSchemas": true,
       "schemaFolder": "./schemas",
