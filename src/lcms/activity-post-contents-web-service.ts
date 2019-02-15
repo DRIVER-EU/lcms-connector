@@ -1,10 +1,11 @@
 import {AbstractWebService} from './abstract-web-service';
 import {IEditViewContent, IEditViewContentLock, IEditViewContentRelease} from './edit-view-content';
 import * as request from 'request';
+import {IField} from './activity-view-content';
 
 export class ActivityPostContentsWebService extends AbstractWebService {
   private activity: string = '';
-  private field: string = '';
+  private fields: Record<string, IField> = {};
   protected options: request.CoreOptions = {
     method: 'POST',
     encoding: 'utf8',
@@ -33,8 +34,8 @@ export class ActivityPostContentsWebService extends AbstractWebService {
     this.activity = activity;
   }
 
-  public setField(field: string) {
-    this.field = field;
+  public setFields(fields: Record<string, IField>) {
+    this.fields = Object.assign(this.fields, fields);
   }
 
   private getLockRequestUrl() {
@@ -45,9 +46,9 @@ export class ActivityPostContentsWebService extends AbstractWebService {
     return this.serverUrl + '/gui/releaseeditlock';
   }
 
-  private async requestLock() {
-    return new Promise<any>((resolve, reject) => {
-      const lock: IEditViewContentLock = {activityId: this.activity, fieldId: this.field, type: 'FIELD', longEdit: false};
+  private async requestLock(data: IEditViewContent) {
+    return new Promise<IEditViewContent>((resolve, reject) => {
+      const lock: IEditViewContentLock = {activityId: data.activityId, fieldId: data.fieldId, type: 'FIELD', longEdit: false};
       this.options.body = JSON.stringify(lock);
       if (this.cookie) {
         Object.assign(this.options.headers, {Cookie: this.cookie});
@@ -56,14 +57,14 @@ export class ActivityPostContentsWebService extends AbstractWebService {
       console.log(`Requesting '${url}' with cookie ${this.cookie}`);
       request(url, this.options, (error, res, body) => {
         if (error) return reject(error);
-        resolve(JSON.parse(body));
+        resolve(data);
       });
     });
   }
 
-  private async releaseLock() {
-    return new Promise<any>((resolve, reject) => {
-      const lock: IEditViewContentRelease = {activityId: this.activity, fieldId: this.field, type: 'FIELD'};
+  private async releaseLock(data: IEditViewContent) {
+    return new Promise<IEditViewContent>((resolve, reject) => {
+      const lock: IEditViewContentRelease = {activityId: data.activityId, fieldId: data.fieldId, type: 'FIELD'};
       this.options.body = JSON.stringify(lock);
       if (this.cookie) {
         Object.assign(this.options.headers, {Cookie: this.cookie});
@@ -72,18 +73,54 @@ export class ActivityPostContentsWebService extends AbstractWebService {
       console.log(`Requesting '${url}' with cookie ${this.cookie}`);
       request(url, this.options, (error, res, body) => {
         if (error) return reject(error);
-        resolve(JSON.parse(body));
+        resolve(data);
       });
     });
   }
 
-  public loadData(successCall: Function, errorCall: Function, msg: Object, cookie?: string) {
-    const body = Object.assign(msg, {activityId: this.activity, fieldId: this.field, setActivityRead: true} as IEditViewContent);
-    const success = (data) => {
-      this.releaseLock().then(() => successCall(body));
-    };
-    this.requestLock().then((status) => {
-      super.loadData(success, errorCall, body, this.cookie, 'POST');
+  private async postData(data: IEditViewContent) {
+    return new Promise<IEditViewContent>((resolve, reject) => {
+      this.options.body = JSON.stringify(data);
+      if (this.cookie) {
+        Object.assign(this.options.headers, {Cookie: this.cookie});
+      }
+      const url = this.getServiceSpecificUrl();
+      console.log(`Requesting '${url}' with cookie ${this.cookie}`);
+      request(url, this.options, (error, res, body) => {
+        if (error) return reject(error);
+        resolve(data);
+      });
+    });
+  }
+
+  private getFieldId(organisation: string) {
+    if (this.fields.hasOwnProperty(organisation)) {
+      return this.fields[organisation].id;
+    } else {
+      return undefined;
+    }
+  }
+
+  public async writeLCMSData(organisation: string, content: string) {
+    return new Promise((resolve, reject) => {
+      const fieldId = this.getFieldId(organisation);
+      if (!fieldId) {
+        return console.warn(`Could not find fieldID for ${organisation}`);
+      }
+      const body: IEditViewContent = {newContents: content, activityId: this.activity, fieldId: fieldId, setActivityRead: true, longEdit: false, attachments: [], type: 'FIELD'};
+      this.requestLock(body)
+        .then(data => {
+          this.postData(data)
+            .then(data => {
+              this.releaseLock(data)
+                .then(() => {
+                  resolve();
+                })
+                .catch(err => reject(err));
+            })
+            .catch(err => reject(err));
+        })
+        .catch(err => reject(err));
     });
   }
 }

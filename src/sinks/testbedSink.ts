@@ -10,6 +10,8 @@ import {IEditViewContent} from '../lcms/edit-view-content';
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
 
+const stringify = (m: string | Object) => (typeof m === 'string' ? m : JSON.stringify(m, null, 2));
+
 /**
  * Save GeoJSON to a folder.
  *
@@ -85,11 +87,6 @@ export class TestbedSink extends Sink {
     this.processQueue();
     let topic = this.createTopicName('geojson');
     this.publish(topic, geoJson);
-
-    //// TODO: REMOVE!!
-    setTimeout(() => {
-      this.publishToLCMS('test-organisation', 'test-content');
-    }, 5000);
   }
 
   protected sendCAPData(key: string, cap: ICAPAlert) {
@@ -184,7 +181,6 @@ export class TestbedSink extends Sink {
   }
 
   private handleMessage(message: IAdapterMessage) {
-    const stringify = (m: string | Object) => (typeof m === 'string' ? m : JSON.stringify(m, null, 2));
     switch (message.topic.toLowerCase()) {
       case 'system_heartbeat':
         // log.info(`Received heartbeat message with key ${stringify(message.key)}: ${stringify(message.value)}`);
@@ -193,7 +189,6 @@ export class TestbedSink extends Sink {
         // log.info(`Received configuration message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
       case 'standard_cap':
-        log(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         this.handleCAPMessage(message);
         break;
       case 'flood_actual':
@@ -207,14 +202,29 @@ export class TestbedSink extends Sink {
   }
 
   private handleCAPMessage(message: IAdapterMessage) {
+    if (message.key && typeof message.key === 'object' && message.key.senderID === this.id) {
+      //Skip own messages
+      return;
+    }
+    log(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
     const msg: ICAPAlert = message.value as ICAPAlert;
-    const organisation: string = msg.sender;
+    let organisation: string = msg.sender;
     const content: string = this.getParameterValue(msg.info.parameter);
-    // this.publishToLCMS(organisation, content);
+    if (organisation.indexOf('@crisissuite.com') > 0) {
+      organisation = organisation.replace('@crisissuite.com', '').toUpperCase();
+    } else if (organisation.indexOf('@sim-ci.com') > 0) {
+      organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
+    } else {
+      organisation = organisation.toUpperCase();
+    }
+    if (organisation && content && content.length) this.publishToLCMS(organisation, content);
   }
 
-  private getParameterValue(parameter: IValueNamePair): string {
-    if (!parameter || !parameter.value) return '';
+  private getParameterValue(parameter: IValueNamePair | IValueNamePair[]): string {
+    if (!parameter) return '';
+    if (Array.isArray(parameter)) {
+      return parameter.map(p => `${p.valueName}<br>${p.value}`).join('<br><br>');
+    }
     return parameter.value;
   }
 
@@ -229,7 +239,7 @@ export class TestbedSink extends Sink {
       .catch(err => console.error(err));
   }
 
-  private publishToLCMS(organisation: string, content: string) {
+  public publishToLCMS(organisation: string, content: string) {
     var success = (data: Object) => {
       log(`Sent data: ${JSON.stringify(data)}`);
     };
@@ -237,7 +247,7 @@ export class TestbedSink extends Sink {
     var error = (err: string) => {
       log(`Error sending data: ${err}`);
     };
-    
-    this.activityPostContentsWS.loadData(success, error, {newContents: content} as IEditViewContent);
+
+    this.activityPostContentsWS.writeLCMSData(organisation, content);
   }
 }

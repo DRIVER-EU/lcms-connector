@@ -5,6 +5,7 @@ export interface IEditViewContent {
   longEdit: boolean;
   attachments: string[];
   setActivityRead: boolean;
+  type: 'FIELD';
 }
 
 export interface IEditViewContentRelease {

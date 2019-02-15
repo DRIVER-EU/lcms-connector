@@ -18,7 +18,7 @@ import {Sink} from './sinks/sink';
 import {FolderSink} from './sinks/folderSink';
 import {TestbedSink} from './sinks/testbedSink';
 import {ActivityView} from './lcms/activity-view';
-import {ActivityViewContent} from './lcms/activity-view-content';
+import {ActivityViewContent, IField} from './lcms/activity-view-content';
 import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-service';
 import {ActivityPostContentsWebService} from './lcms/activity-post-contents-web-service';
 
@@ -61,6 +61,8 @@ export class Server {
   private serverMode: boolean = false;
   private id: string = '';
   private consumeDisciplines: string[] = [];
+  private views: {[title: string]: ActivityView};
+  private fields: {[title: string]: ActivityViewContent};
 
   /** The following variables are responsible for holding the ticket object, list
    * of available drawings and list of currently selected layers.
@@ -128,6 +130,7 @@ export class Server {
       console.log('Login success');
       if (this.serverMode) {
         this.startServer();
+        this.loadActivities(false);
       } else {
         this.loadActivities();
       }
@@ -139,6 +142,14 @@ export class Server {
     app.get('/update', (req, res) => {
       this.loadActivities();
       res.send('Publishing activities');
+    });
+    app.get('/test/htm', (req, res) => {
+      (this.sink as TestbedSink).publishToLCMS('HTM', `HTM Status ${new Date().getMilliseconds()}`);
+      res.send('Published htm');
+    });
+    app.get('/test/stedin', (req, res) => {
+      (this.sink as TestbedSink).publishToLCMS('STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`);
+      res.send('Published stedin');
     });
     app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));
   }
@@ -166,12 +177,12 @@ export class Server {
    * This function is called by the success callback of the loadActivities function above.
    * It gets the data for the defined activity and reders it in the tree.
    */
-  loadDrawing(activity: Activity) {
+  loadDrawing(activity: Activity, sendToSink: boolean = false) {
     // Success callback that renders the drawing into the tree.
     var success = (drawings: Drawings) => {
       let col = drawings.toGeoJSONCollection(this.ticket);
 
-      this.sink.send(col);
+      if (sendToSink) this.sink.send(col);
 
       log(`Sinking ${Object.keys(col).length} collections: `);
       log(
@@ -180,7 +191,7 @@ export class Server {
           .join('\n')}`
       );
       if (this.refreshTime) {
-        setTimeout(() => this.loadDrawing(activity), this.refreshTime * 1000);
+        setTimeout(() => this.loadDrawing(activity, sendToSink), this.refreshTime * 1000);
       } else {
         // Allow node some time to save the files to disk.
         // setTimeout(() => process.exit(0), 60000);
@@ -225,22 +236,29 @@ export class Server {
    * This function is called by the success callback of the loadActivities function above.
    * It gets the views for the defined activity and renders it in the tree.
    */
-  loadView(activity: Activity, view: ActivityView) {
+  loadView(activity: Activity, view: ActivityView, sendToSink: boolean = false) {
     // Success callback that renders the drawing into the tree.
     var success = (viewContent: ActivityViewContent) => {
       if (!viewContent) return;
-      let col = JSON.stringify(viewContent) as any;
+      let col = viewContent.screenTitle;
       if (this.debugMode) {
         console.log('VIEW CONTENTS');
         console.log(col);
       }
+      this.activityPostContentsWS.setActivity(activity.id);
+      this.activityPostContentsWS.setFields(
+        viewContent.fields.reduce((prev: Record<string, IField>, curr: IField) => {
+          prev[curr.screenTitle] = curr;
+          return prev;
+        }, {})
+      );
       if (this.consumeDisciplines.indexOf(viewContent.screenTitle.toUpperCase()) >= 0) {
-        this.activityPostContentsWS.setActivity(activity.id);
-        this.activityPostContentsWS.setField(viewContent.fields[0].id);
         this.activityPostContentsWS.setCookie(this.cookie);
         const cap = viewContent.toCAPMessages(this.id);
-        console.log(JSON.stringify(cap, null, 2));
-        this.sink.sendCAP({cap: cap});
+        if (sendToSink) {
+          console.log('Sending...: ' + JSON.stringify(cap));
+          this.sink.sendCAP({cap: cap});
+        }
       }
     };
 
@@ -284,7 +302,7 @@ export class Server {
    * This function is called by the success callback of the login function above.
    * It gets the metadata for the defined activity and renders it in the tree.
    */
-  loadActivities() {
+  loadActivities(sendToSink: boolean = true) {
     // Success callback that renders the drawing into the tree.
     var success = (activities: Activity[]) => {
       let exerciseFound = false;
@@ -294,11 +312,11 @@ export class Server {
             log(`\nLoading activity ${aIndex}:  ${a.name} ...\n`);
             exerciseFound = true;
             this.loadMetadata(a);
-            this.loadDrawing(a);
+            this.loadDrawing(a, sendToSink);
             this.loadViewOverview(a, (views: ActivityView[]) => {
               if (views) {
                 views.forEach((view: ActivityView) => {
-                  this.loadView(a, view);
+                  this.loadView(a, view, sendToSink);
                 });
               }
             });
