@@ -230,14 +230,14 @@ export class TestbedSink extends Sink {
   }
 
   private publishToLCMS(organisation: string, content: string) {
-    var success = (data: string) => {
-      log(`Sent data: ${data}`);
+    var success = (data: Object) => {
+      log(`Sent data: ${JSON.stringify(data)}`);
     };
 
     var error = (err: string) => {
       log(`Error sending data: ${err}`);
     };
-
+    
     this.activityPostContentsWS.loadData(success, error, {newContents: content} as IEditViewContent);
   }
 }
