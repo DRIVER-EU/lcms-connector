@@ -212,12 +212,13 @@ export class TestbedSink extends Sink {
     const content: string = this.getParameterValue(msg.info.parameter);
     if (organisation.indexOf('@crisissuite.com') > 0) {
       organisation = organisation.replace('@crisissuite.com', '').toUpperCase();
+      if (organisation && content && content.length) this.publishToLCMS(organisation, content);
     } else if (organisation.indexOf('@sim-ci.com') > 0) {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
+      if (organisation && content && content.length) this.publishToLCMS(organisation, content);
     } else {
       organisation = organisation.toUpperCase();
     }
-    if (organisation && content && content.length) this.publishToLCMS(organisation, content);
   }
 
   private getParameterValue(parameter: IValueNamePair | IValueNamePair[]): string {

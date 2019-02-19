@@ -25,8 +25,7 @@ export class ActivityViewContent implements IActivityViewContent {
   public toCAPMessages(senderId: string) {
     let capMsg: ICAPAlert = createDefaultCAPMessage(senderId);
     capMsg.info.headline = this.screenTitle;
-    capMsg.info.parameter = {valueName: 'LCMS-content', value: ''};
-    capMsg.info.parameter.value = this.parseFields();
+    capMsg.info.parameter = {valueName: 'LCMS-content', value: this.parseFields()};
     return capMsg;
   }
 
