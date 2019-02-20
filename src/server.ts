@@ -180,7 +180,7 @@ export class Server {
   loadDrawing(activity: Activity, sendToSink: boolean = false) {
     // Success callback that renders the drawing into the tree.
     var success = (drawings: Drawings) => {
-      let col = drawings.toGeoJSONCollection(this.ticket);
+      let col = drawings.toGeoJSONCollection(this.cookie);
 
       if (sendToSink) this.sink.send(col);
 

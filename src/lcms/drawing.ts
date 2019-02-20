@@ -27,18 +27,22 @@ export class Drawing {
    *
    * @memberOf Drawing
    */
-  public toGeoJSONCollection(ticket: Ticket) {
+  public toGeoJSONCollection(ticket: string) {
     let col: {[key: string]: INamedGeoJSON} = {};
     this.topicLayers.forEach(tl => {
       if (!tl.id) return;
       let geoJson: INamedGeoJSON = {
-        guid: tl.id,
-        title: tl.name,
-        type: 'FeatureCollection',
-        features: []
+        properties: {
+          guid: tl.id,
+          title: tl.name
+        },
+        geojson: {
+          type: 'FeatureCollection',
+          features: []
+        }
       };
       col[tl.name || tl.id] = geoJson;
-      let features = geoJson.features;
+      let features = geoJson.geojson.features;
       tl.actionLayers.forEach(al => {
         if (!al.elements) return;
         al.elements.forEach(el => {

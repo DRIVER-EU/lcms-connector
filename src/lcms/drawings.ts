@@ -29,10 +29,10 @@ export class Drawings {
    * 
    * @memberOf Drawing
    */
-  public toGeoJSONCollection(ticket: Ticket) {
+  public toGeoJSONCollection(cookie: string) {
     let col: { [key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject> } = {};
     this.drawings.forEach((d: DrawingObject) => {
-      let drawingCollection = d.drawing.toGeoJSONCollection(ticket);
+      let drawingCollection = d.drawing.toGeoJSONCollection(cookie);
       col = Object.assign(col, drawingCollection);
     });
     return col;

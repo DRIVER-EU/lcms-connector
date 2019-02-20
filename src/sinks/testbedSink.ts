@@ -2,10 +2,11 @@ import {ProduceRequest, TestBedAdapter, ITestBedOptions, IAdapterMessage} from '
 import {Sink} from './sink';
 import {FeatureCollection} from 'geojson';
 import {ICAPAlert, IValueNamePair} from '../models/cap';
-import {ILargeDataUpdate} from '../models/ldu';
+import {ILargeDataUpdate, DataType} from '../models/ldu';
 import * as axios from 'axios';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
 import {IEditViewContent} from '../lcms/edit-view-content';
+import {INamedGeoJSON} from '../lcms/named-geojson';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -83,7 +84,7 @@ export class TestbedSink extends Sink {
     }
   }
 
-  protected sendData(key: string, geoJson: FeatureCollection) {
+  protected sendData(key: string, geoJson: any) {
     this.processQueue();
     let topic = this.createTopicName('geojson');
     this.publish(topic, geoJson);
@@ -120,7 +121,7 @@ export class TestbedSink extends Sink {
    *
    * @memberOf Router
    */
-  private publish(topic: string, data?: FeatureCollection | ICAPAlert) {
+  private publish(topic: string, data?: INamedGeoJSON | ICAPAlert) {
     const payload = this.createProduceRequest(topic, data);
     if (!this.adapter || !this.adapter.isConnected) {
       log(`Adapter not ready, add GeoJSON file to queue (at position: ${this.queue.length}).`);
@@ -130,8 +131,13 @@ export class TestbedSink extends Sink {
     this.sendPayload(payload);
   }
 
-  private createProduceRequest(topic: string, data?: FeatureCollection | ICAPAlert): ProduceRequest {
-    this.wrapUnionFieldsOfGeojson(data);
+  private createProduceRequest(topic: string, data?: INamedGeoJSON | ICAPAlert): ProduceRequest {
+    if (data.hasOwnProperty('geojson') && (data as INamedGeoJSON).geojson.hasOwnProperty('features')) {
+      this.wrapUnionFieldsOfGeojson((data as INamedGeoJSON).geojson);
+    }
+    if (data.hasOwnProperty('properties')) {
+      this.wrapUnionFieldsOfProperties((data as INamedGeoJSON).properties);
+    }
     const payload: ProduceRequest = {
       topic: topic,
       partition: 0,
@@ -152,21 +158,25 @@ export class TestbedSink extends Sink {
           f.geometry = {} as any;
           f.geometry[`eu.driver.model.geojson.${geom.type}`] = geom;
         }
-        if (f && f.properties && Object.keys(f.properties).length > 0) {
-          Object.keys(f.properties).forEach(key => {
-            const val = f.properties[key];
-            f.properties[key] = {};
-            if (typeof val === 'object') {
-              f.properties[key][`string`] = JSON.stringify(val);
-            } else {
-              f.properties[key][`${typeof val}`] = val;
-            }
-          });
-        }
+        this.wrapUnionFieldsOfProperties(f.properties);
       });
     }
     if (data.hasOwnProperty('identifier')) {
       const cap = data as ICAPAlert;
+    }
+  }
+
+  private wrapUnionFieldsOfProperties(props: any) {
+    if (props && Object.keys(props).length > 0) {
+      Object.keys(props).forEach(key => {
+        const val = props[key];
+        props[key] = {};
+        if (typeof val === 'object') {
+          props[key][`string`] = JSON.stringify(val);
+        } else {
+          props[key][`${typeof val}`] = val;
+        }
+      });
     }
   }
 
@@ -189,9 +199,14 @@ export class TestbedSink extends Sink {
         // log.info(`Received configuration message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
       case 'standard_cap':
-        this.handleCAPMessage(message);
+        // this.handleCAPMessage(message);
+        break;
+      case 'lcms_plots':
+      case 'test_plots':
+        log(`Received lcms_plots message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
       case 'flood_actual':
+      case 'flood_actual_lcms':
         log(`Received flood_actual message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         this.handleLargDataMessage(message);
         break;
@@ -231,6 +246,13 @@ export class TestbedSink extends Sink {
 
   private handleLargDataMessage(message: IAdapterMessage) {
     const msg: ILargeDataUpdate = message.value as ILargeDataUpdate;
+    console.log(stringify(msg));
+    if (msg.dataType && msg.dataType === DataType.pdf) {
+      this.publishToLCMS('ZKI', `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
+    }
+    if (msg.dataType && msg.dataType === DataType.wms) {
+      this.publishToLCMS('ZKI', `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
+    }
     axios.default
       .get(msg.url)
       .then((data: any) => {

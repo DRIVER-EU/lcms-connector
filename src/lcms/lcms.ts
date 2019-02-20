@@ -165,7 +165,7 @@ export class AElement {
   //   return null;
   // }
 
-  public toGeoJSONFeature(ticket?: Ticket | string): GeoJSON.Feature<GeoJSON.GeometryObject> {
+  public toGeoJSONFeature(cookie?: string): GeoJSON.Feature<GeoJSON.GeometryObject> {
     if (this.obj && this.obj.pointList) {
       const coords = this.obj.pointList.map(point => [point.x, point.y]);
       return <GeoJSON.Feature<GeoJSON.Polygon>>{
@@ -185,7 +185,7 @@ export class AElement {
     return this.geometry.clearBounds(), this.geometry.getBounds();
   }
 
-  protected downloadFile(filename: string, url: string, cookie: string) {
+  protected async downloadFile(filename: string, url: string, cookie: string) {
     let file = fs.createWriteStream(filename);
     let req = request.get(url, {encoding: null, headers: {'Cookie': cookie}}, (err, response, body) => {
       if (err) {
@@ -194,6 +194,7 @@ export class AElement {
       }
       file.write(body);
       file.end();
+      // cb(body);
     });
   }
 
@@ -584,6 +585,7 @@ export class Symbol extends AElement {
         });
       }
     }
+    // properties['b64-icon'] = this.getBase64Icon();
     properties['Name'] = this.getLabel();
     return <GeoJSON.Feature<GeoJSON.Point>>{
       type: 'Feature',

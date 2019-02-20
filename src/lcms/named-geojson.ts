@@ -1,6 +1,6 @@
 import {FeatureCollection} from 'geojson';
 
-export interface INamedGeoJSON extends FeatureCollection {
-  guid: string;
-  title: string;
+export interface INamedGeoJSON {
+  properties: {[key: string]: any};
+  geojson: FeatureCollection;
 }
