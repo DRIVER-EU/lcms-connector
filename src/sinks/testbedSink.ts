@@ -7,6 +7,7 @@ import * as axios from 'axios';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
 import {IEditViewContent} from '../lcms/edit-view-content';
 import {INamedGeoJSON} from '../lcms/named-geojson';
+import * as fs from 'fs';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -199,16 +200,19 @@ export class TestbedSink extends Sink {
         // log.info(`Received configuration message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
       case 'standard_cap':
-        // this.handleCAPMessage(message);
+        this.handleCAPMessage(message);
         break;
       case 'lcms_plots':
       case 'test_plots':
-        log(`Received lcms_plots message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+      case 'crisissuite_htm_plots':
+      case 'crisissuite_stedin_plots':
+      case 'flood_prediction_geojson':
+        log(`Received plots message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         break;
       case 'flood_actual':
       case 'flood_actual_lcms':
         log(`Received flood_actual message with key ${stringify(message.key)}: ${stringify(message.value)}`);
-        this.handleLargDataMessage(message);
+        this.handleLargeDataMessage(message);
         break;
       default:
         log(`Received ${message.topic} message with key ${stringify(message.key)}: ${stringify(message.value)}`);
@@ -224,13 +228,13 @@ export class TestbedSink extends Sink {
     log(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
     const msg: ICAPAlert = message.value as ICAPAlert;
     let organisation: string = msg.sender;
-    const content: string = this.getParameterValue(msg.info.parameter);
+    const content: string = msg.info ? this.getParameterValue(msg.info.parameter) : 'no content';
     if (organisation.indexOf('@crisissuite.com') > 0) {
       organisation = organisation.replace('@crisissuite.com', '').toUpperCase();
-      if (organisation && content && content.length) this.publishToLCMS(organisation, content);
+      if (organisation && content && content.length) this.publishToLCMS(organisation, organisation, content);
     } else if (organisation.indexOf('@sim-ci.com') > 0) {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
-      if (organisation && content && content.length) this.publishToLCMS(organisation, content);
+      if (organisation && content && content.length) this.publishToLCMS(organisation, organisation, content);
     } else {
       organisation = organisation.toUpperCase();
     }
@@ -244,25 +248,24 @@ export class TestbedSink extends Sink {
     return parameter.value;
   }
 
-  private handleLargDataMessage(message: IAdapterMessage) {
+  private handleLargeDataMessage(message: IAdapterMessage) {
     const msg: ILargeDataUpdate = message.value as ILargeDataUpdate;
     console.log(stringify(msg));
-    if (msg.dataType && msg.dataType === DataType.pdf) {
-      this.publishToLCMS('ZKI', `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
-    }
-    if (msg.dataType && msg.dataType === DataType.wms) {
-      this.publishToLCMS('ZKI', `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
-    }
-    axios.default
-      .get(msg.url)
-      .then((data: any) => {
-        console.log(`Downloaded ${msg.title} ${msg.dataType}:`);
-        console.log(data);
-      })
-      .catch(err => console.error(err));
+    if (msg.dataType && (msg.dataType === DataType.pdf || msg.dataType === DataType.wms)) {// || msg.dataType === DataType.geojson)) {
+      this.publishToLCMS('ZKI', msg.title, `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
+    } else {
+      axios.default
+        .get(msg.url)
+        .then((data: any) => {
+          console.log(`Downloaded ${msg.title} ${msg.dataType}:`);
+          console.log(data);
+          // fs.write
+        })
+        .catch(err => console.error(err));
+      }
   }
 
-  public publishToLCMS(organisation: string, content: string) {
+  public publishToLCMS(organisation: string, title: string, content: string) {
     var success = (data: Object) => {
       log(`Sent data: ${JSON.stringify(data)}`);
     };
@@ -271,6 +274,6 @@ export class TestbedSink extends Sink {
       log(`Error sending data: ${err}`);
     };
 
-    this.activityPostContentsWS.writeLCMSData(organisation, content);
+    this.activityPostContentsWS.writeLCMSData(organisation, title, content);
   }
 }

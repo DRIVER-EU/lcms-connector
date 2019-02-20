@@ -17,7 +17,7 @@
       "ignoreTimeTopic": true,
       "wrapUnions": "auto",
       "clientId": "lcms",
-      "consume": [{"topic": "standard_cap"}],
+      "consume": [{"topic": "standard_cap"}, {"topic": "flood_actual"}],
       "produce": ["lcms_plots", "standard_cap"],
       "autoRegisterSchemas": true,
       "schemaFolder": "./schemas",

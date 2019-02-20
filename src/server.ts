@@ -102,6 +102,7 @@ export class Server {
     if (options.kafka && config.kafka) {
       this.id = config.kafka.testbedOptions.clientId;
       this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.plotTopic, config.kafka.capTopic);
+      // this.sink = new FolderSink(dataFolder, imageFolder);
     } else {
       this.sink = new FolderSink(dataFolder, imageFolder);
     }
@@ -143,12 +144,16 @@ export class Server {
       this.loadActivities();
       res.send('Publishing activities');
     });
+    app.get('/test/overig/create', (req, res) => {
+      (this.sink as TestbedSink).publishToLCMS('OVERIG', `OVERIG ${new Date().getMilliseconds()}`, `OVERIG Status ${new Date().getMilliseconds()}`);
+      res.send('Published overig title');
+    });
     app.get('/test/htm', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS('HTM', `HTM Status ${new Date().getMilliseconds()}`);
+      (this.sink as TestbedSink).publishToLCMS('HTM', 'HTM', `HTM Status ${new Date().getMilliseconds()}`);
       res.send('Published htm');
     });
     app.get('/test/stedin', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS('STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`);
+      (this.sink as TestbedSink).publishToLCMS('STEDIN', 'STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`);
       res.send('Published stedin');
     });
     app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));
@@ -246,6 +251,7 @@ export class Server {
         console.log(col);
       }
       this.activityPostContentsWS.setActivity(activity.id);
+      this.activityPostContentsWS.setViews(this.views);
       this.activityPostContentsWS.setFields(
         viewContent.fields.reduce((prev: Record<string, IField>, curr: IField) => {
           prev[curr.screenTitle] = curr;
@@ -314,6 +320,10 @@ export class Server {
             this.loadMetadata(a);
             this.loadDrawing(a, sendToSink);
             this.loadViewOverview(a, (views: ActivityView[]) => {
+              this.views = views.reduce((prev: Record<string, ActivityView>, curr: ActivityView) => {
+                prev[curr.screenTitle] = curr;
+                return prev;
+              }, {});
               if (views) {
                 views.forEach((view: ActivityView) => {
                   this.loadView(a, view, sendToSink);

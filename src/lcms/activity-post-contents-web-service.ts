@@ -1,10 +1,14 @@
 import {AbstractWebService} from './abstract-web-service';
 import {IEditViewContent, IEditViewContentLock, IEditViewContentRelease} from './edit-view-content';
 import * as request from 'request';
-import {IField} from './activity-view-content';
+import {IField, ActivityViewContent} from './activity-view-content';
+import {IActivityView} from './activity-view';
+import {ActivityViewContentsWebService} from './activity-view-contents-web-service';
 
 export class ActivityPostContentsWebService extends AbstractWebService {
+  private activityViewContentsWS: ActivityViewContentsWebService;
   private activity: string = '';
+  private views: Record<string, IActivityView> = {};
   private fields: Record<string, IField> = {};
   protected options: request.CoreOptions = {
     method: 'POST',
@@ -16,6 +20,7 @@ export class ActivityPostContentsWebService extends AbstractWebService {
 
   constructor(protected url: string, protected username: string, protected password: string) {
     super(url, username, password);
+    this.activityViewContentsWS = new ActivityViewContentsWebService(url, username, password);
   }
 
   public getServiceSpecificUrl() {
@@ -36,6 +41,14 @@ export class ActivityPostContentsWebService extends AbstractWebService {
 
   public setFields(fields: Record<string, IField>) {
     this.fields = Object.assign(this.fields, fields);
+  }
+
+  public setViews(views: Record<string, IActivityView>) {
+    this.views = Object.assign(this.views, views);
+  }
+
+  private getAddProperFieldUrl() {
+    return this.serverUrl + '/gui/addproperfield';
   }
 
   private getLockRequestUrl() {
@@ -93,6 +106,14 @@ export class ActivityPostContentsWebService extends AbstractWebService {
     });
   }
 
+  private getViewId(organisation: string) {
+    if (this.views.hasOwnProperty(organisation)) {
+      return this.views[organisation].id;
+    } else {
+      return undefined;
+    }
+  }
+
   private getFieldId(organisation: string) {
     if (this.fields.hasOwnProperty(organisation)) {
       return this.fields[organisation].id;
@@ -101,11 +122,57 @@ export class ActivityPostContentsWebService extends AbstractWebService {
     }
   }
 
-  public async writeLCMSData(organisation: string, content: string) {
+  public async createProperField(organisation: string, title: string) {
     return new Promise((resolve, reject) => {
-      const fieldId = this.getFieldId(organisation);
+      const newField = {
+        activityId: this.activity,
+        viewId: this.getViewId(organisation),
+        fieldTitle: title,
+        setActivityRead: false
+      };
+      this.options.body = JSON.stringify(newField);
+      if (this.cookie) {
+        Object.assign(this.options.headers, {Cookie: this.cookie});
+      }
+      const url = this.getAddProperFieldUrl();
+      console.log(`Requesting '${url}' with cookie ${this.cookie}`);
+      request(url, this.options, (error, res, body) => {
+        if (error) return reject(error);
+        resolve(body);
+      });
+    });
+  }
+
+  public updateFields(activityId: string, viewId: string) {
+    return new Promise(async (resolve, reject) => {
+      var success = (viewContent: ActivityViewContent) => {
+        if (!viewContent || !viewContent.fields) return resolve();
+        console.log('--Updated fields');
+        this.setFields(
+          viewContent.fields.reduce((prev: Record<string, IField>, curr: IField) => {
+            prev[curr.screenTitle] = curr;
+            return prev;
+          }, {})
+        );
+        resolve();
+      };
+      var failure = (metadata: any) => {
+        reject();
+      };
+      this.activityViewContentsWS.loadData(success, failure, {activityId: activityId, viewId: viewId, viewChangeData: {changedFieldsByUser: [], lastChangeTime: Date.now()}}, this.cookie);
+    });
+  }
+
+  public async writeLCMSData(organisation: string, title: string, content: string) {
+    return new Promise(async (resolve, reject) => {
+      var fieldId = this.getFieldId(title);
       if (!fieldId) {
-        return console.warn(`Could not find fieldID for ${organisation}`);
+        await this.createProperField(organisation, title);
+        await this.updateFields(this.activity, this.getViewId(organisation));
+        console.warn(`Created fieldID for ${title}`);
+        fieldId = this.getFieldId(title);
+      } else {
+        console.log(`USe existing fieldID for ${title}`);
       }
       const body: IEditViewContent = {newContents: content, activityId: this.activity, fieldId: fieldId, setActivityRead: true, longEdit: false, attachments: [], type: 'FIELD'};
       this.requestLock(body)
