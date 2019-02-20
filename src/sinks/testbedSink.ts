@@ -8,6 +8,7 @@ import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web
 import {IEditViewContent} from '../lcms/edit-view-content';
 import {INamedGeoJSON} from '../lcms/named-geojson';
 import * as fs from 'fs';
+import * as path from 'path';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -28,8 +29,10 @@ export class TestbedSink extends Sink {
   private queue: ProduceRequest[] = [];
   private activityPostContentsWS: ActivityPostContentsWebService;
 
-  constructor(options: ITestBedOptions, plotTopic: string, capTopic: string) {
+  constructor(options: ITestBedOptions, plotTopic: string, capTopic: string, private dataPath: string = '.') {
     super();
+    this.dataPath = path.resolve(this.dataPath);
+    if (!fs.existsSync(this.dataPath)) fs.mkdirSync(this.dataPath);
     options.clientId = options.clientId || this.id;
     this.id = options.clientId;
     this.plotTopic = plotTopic || this.plotTopic;
@@ -133,6 +136,7 @@ export class TestbedSink extends Sink {
   }
 
   private createProduceRequest(topic: string, data?: INamedGeoJSON | ICAPAlert): ProduceRequest {
+    if (!data) return;
     if (data.hasOwnProperty('geojson') && (data as INamedGeoJSON).geojson.hasOwnProperty('features')) {
       this.wrapUnionFieldsOfGeojson((data as INamedGeoJSON).geojson);
     }
@@ -207,10 +211,12 @@ export class TestbedSink extends Sink {
       case 'crisissuite_htm_plots':
       case 'crisissuite_stedin_plots':
       case 'flood_prediction_geojson':
-        log(`Received plots message with key ${stringify(message.key)}: ${stringify(message.value)}`);
+        log(`Received plots message with key ${stringify(message.key)}}`);
+        this.handleGeoJSONMessage(message);
         break;
       case 'flood_actual':
       case 'flood_actual_lcms':
+      case 'flood_prediction_netcdf':
         log(`Received flood_actual message with key ${stringify(message.key)}: ${stringify(message.value)}`);
         this.handleLargeDataMessage(message);
         break;
@@ -251,18 +257,38 @@ export class TestbedSink extends Sink {
   private handleLargeDataMessage(message: IAdapterMessage) {
     const msg: ILargeDataUpdate = message.value as ILargeDataUpdate;
     console.log(stringify(msg));
-    if (msg.dataType && (msg.dataType === DataType.pdf || msg.dataType === DataType.wms)) {// || msg.dataType === DataType.geojson)) {
+    if (msg.dataType && (msg.dataType === DataType.pdf || msg.dataType === DataType.wms)) {
+      // || msg.dataType === DataType.geojson)) {
       this.publishToLCMS('ZKI', msg.title, `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
     } else {
       axios.default
         .get(msg.url)
-        .then((data: any) => {
+        .then((body: axios.AxiosResponse) => {
           console.log(`Downloaded ${msg.title} ${msg.dataType}:`);
-          console.log(data);
-          // fs.write
+          // console.log(data);
+          const filename = this.createFilename(msg.title, msg.dataType);
+          fs.writeFile(filename, JSON.stringify(body.data), err => {
+            if (err) console.error(`Error saving ${filename}: ${err.message}!`);
+            console.log(`Wrote ${filename}`);
+          });
         })
         .catch(err => console.error(err));
-      }
+    }
+  }
+
+  private handleGeoJSONMessage(message: IAdapterMessage) {
+    const msg: INamedGeoJSON = message.value as INamedGeoJSON;
+    const filename = this.createFilename(!msg.properties ? 'none' : !msg.properties.name ? 'noname' : msg.properties.name, 'geojson');
+    fs.writeFile(filename, JSON.stringify(msg), err => {
+      if (err) console.error(`Error saving ${filename}: ${err.message}!`);
+      console.log(`Wrote ${filename}`);
+    });
+  }
+
+  protected createFilename(key: string = 'default', ext: string) {
+    if (typeof key !== 'string' && (<any>key).string) key = (<any>key).string;
+    const keyFiltered = key.replace(/[^a-zA-Z0-9 -]/g, '');
+    return path.join(this.dataPath, `${keyFiltered.toLowerCase()}.${ext}`);
   }
 
   public publishToLCMS(organisation: string, title: string, content: string) {

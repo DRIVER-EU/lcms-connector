@@ -101,7 +101,7 @@ export class Server {
 
     if (options.kafka && config.kafka) {
       this.id = config.kafka.testbedOptions.clientId;
-      this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.plotTopic, config.kafka.capTopic);
+      this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.plotTopic, config.kafka.capTopic, dataFolder);
       // this.sink = new FolderSink(dataFolder, imageFolder);
     } else {
       this.sink = new FolderSink(dataFolder, imageFolder);
