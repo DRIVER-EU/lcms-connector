@@ -22,6 +22,7 @@ import {ActivityViewContent, IField} from './lcms/activity-view-content';
 import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-service';
 import {ActivityPostContentsWebService} from './lcms/activity-post-contents-web-service';
 import {createLCMSContent} from './models/lcms';
+import {createDefaultCAPMessage, ICAPAlert} from './models/cap';
 
 if (!fs.existsSync('./local')) {
   fs.mkdirSync('./local');
@@ -153,6 +154,12 @@ export class Server {
     app.get('/update', (req, res) => {
       this.loadActivities();
       res.send('Publishing activities');
+    });
+    app.get('/test/loadtest', (req, res) => {
+      const capMsg: ICAPAlert = createDefaultCAPMessage('lcms');
+      capMsg.info.headline = 'headline';
+      (this.sink as TestbedSink).sendCAP({cap: capMsg});
+      res.send('Published cap msg');
     });
     app.get('/test/overig/create', (req, res) => {
       (this.sink as TestbedSink).publishToLCMS([createLCMSContent('OVERIG', `OVERIG ${new Date().getMilliseconds()}`, `OVERIG Status ${new Date().getMilliseconds()}`)]);

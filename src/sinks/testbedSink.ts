@@ -244,6 +244,10 @@ export class TestbedSink extends Sink {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
       if (organisation && contents) this.publishToLCMS(contents);
+    } else if (organisation.indexOf('@lcms.com') > 0) {
+      organisation = organisation.replace('@lcms.com', '').toUpperCase();
+      // const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      // if (organisation && contents) this.publishToLCMS(contents);
     } else {
       organisation = organisation.toUpperCase();
     }

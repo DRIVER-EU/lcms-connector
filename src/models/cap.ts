@@ -56,6 +56,7 @@ export function createDefaultCAPMessage(senderId: string): ICAPAlert {
     scope: 'Public',
     addresses: '',
     info: {
+      senderName: 'LCMS-VRH',
       category: 'Met',
       event: 'Monitor',
       urgency: 'Immediate',
@@ -72,7 +73,7 @@ export function createDefaultCAPMessage(senderId: string): ICAPAlert {
  */
 export function convertDateToCAPDate(date: Date): string {
   if (!date) return 'unknown date';
-  var tdiff = date.getTimezoneOffset();
+  var tdiff = -date.getTimezoneOffset();
   var tdiffh = Math.floor(Math.abs(tdiff / 60));
   var tdiffm = tdiff % 60;
   var tdiffpm = tdiff <= 0 ? '-' : '+';
