@@ -60,6 +60,15 @@ export interface IConfig {
      */
     consumeDisciplines: string[];
   };
+  testbed?: {
+    sslOptions: {
+      pfx?: string;
+      passphrase?: string;
+      ca?: string;
+      cert?: string;
+      rejectUnauthorized?: boolean;
+    };
+  };
   kafka?: {
     zookeeperUrl: string;
     clientID: string;

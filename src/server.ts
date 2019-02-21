@@ -21,6 +21,7 @@ import {ActivityView} from './lcms/activity-view';
 import {ActivityViewContent, IField} from './lcms/activity-view-content';
 import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-service';
 import {ActivityPostContentsWebService} from './lcms/activity-post-contents-web-service';
+import {createLCMSContent} from './models/lcms';
 
 if (!fs.existsSync('./local')) {
   fs.mkdirSync('./local');
@@ -31,6 +32,15 @@ if (!fs.existsSync('./local/config.json')) {
 const localConfig: IConfig = require(path.resolve('./local/config.json'));
 const publicConfig: IConfig = require(path.resolve('config.json'));
 const config: IConfig = Object.assign(publicConfig, localConfig);
+if (config.testbed && config.testbed.sslOptions && config.kafka && config.kafka.testbedOptions) {
+  config.kafka.testbedOptions.sslOptions = {
+    passphrase: config.testbed.sslOptions.passphrase,
+    pfx: config.testbed.sslOptions.pfx ? fs.readFileSync(config.testbed.sslOptions.pfx) : undefined,
+    cert: config.testbed.sslOptions.cert ? fs.readFileSync(config.testbed.sslOptions.cert) : undefined,
+    ca: config.testbed.sslOptions.ca ? fs.readFileSync(config.testbed.sslOptions.ca) : undefined,
+    rejectUnauthorized: config.testbed.sslOptions.rejectUnauthorized
+  };
+}
 
 const log = console.log;
 const error = console.error;
@@ -145,15 +155,15 @@ export class Server {
       res.send('Publishing activities');
     });
     app.get('/test/overig/create', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS('OVERIG', `OVERIG ${new Date().getMilliseconds()}`, `OVERIG Status ${new Date().getMilliseconds()}`);
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('OVERIG', `OVERIG ${new Date().getMilliseconds()}`, `OVERIG Status ${new Date().getMilliseconds()}`)]);
       res.send('Published overig title');
     });
     app.get('/test/htm', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS('HTM', 'HTM', `HTM Status ${new Date().getMilliseconds()}`);
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('HTM', 'HTM', `HTM Status ${new Date().getMilliseconds()}`)]);
       res.send('Published htm');
     });
     app.get('/test/stedin', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS('STEDIN', 'STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`);
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('STEDIN', 'STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`)]);
       res.send('Published stedin');
     });
     app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));

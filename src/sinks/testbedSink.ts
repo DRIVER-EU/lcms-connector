@@ -5,10 +5,11 @@ import {ICAPAlert, IValueNamePair} from '../models/cap';
 import {ILargeDataUpdate, DataType} from '../models/ldu';
 import * as axios from 'axios';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
-import {IEditViewContent} from '../lcms/edit-view-content';
 import {INamedGeoJSON} from '../lcms/named-geojson';
 import * as fs from 'fs';
 import * as path from 'path';
+import {ILCMSContent, createLCMSContent} from '../models/lcms';
+import {Promise} from 'bluebird';
 
 const log = console.log.bind(console),
   log_error = console.error.bind(console);
@@ -127,6 +128,7 @@ export class TestbedSink extends Sink {
    */
   private publish(topic: string, data?: INamedGeoJSON | ICAPAlert) {
     const payload = this.createProduceRequest(topic, data);
+    if (!payload) return;
     if (!this.adapter || !this.adapter.isConnected) {
       log(`Adapter not ready, add GeoJSON file to queue (at position: ${this.queue.length}).`);
       this.queue.push(payload);
@@ -135,8 +137,8 @@ export class TestbedSink extends Sink {
     this.sendPayload(payload);
   }
 
-  private createProduceRequest(topic: string, data?: INamedGeoJSON | ICAPAlert): ProduceRequest {
-    if (!data) return;
+  private createProduceRequest(topic: string, data?: INamedGeoJSON | ICAPAlert): ProduceRequest | undefined {
+    if (!data) return undefined;
     if (data.hasOwnProperty('geojson') && (data as INamedGeoJSON).geojson.hasOwnProperty('features')) {
       this.wrapUnionFieldsOfGeojson((data as INamedGeoJSON).geojson);
     }
@@ -234,24 +236,35 @@ export class TestbedSink extends Sink {
     log(`Received CAP message with key ${stringify(message.key)}: ${stringify(message.value)}`);
     const msg: ICAPAlert = message.value as ICAPAlert;
     let organisation: string = msg.sender;
-    const content: string = msg.info ? this.getParameterValue(msg.info.parameter) : 'no content';
     if (organisation.indexOf('@crisissuite.com') > 0) {
       organisation = organisation.replace('@crisissuite.com', '').toUpperCase();
-      if (organisation && content && content.length) this.publishToLCMS(organisation, organisation, content);
+      const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      if (organisation && contents) this.publishToLCMS(contents);
     } else if (organisation.indexOf('@sim-ci.com') > 0) {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
-      if (organisation && content && content.length) this.publishToLCMS(organisation, organisation, content);
+      const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      if (organisation && contents) this.publishToLCMS(contents);
     } else {
       organisation = organisation.toUpperCase();
     }
   }
 
-  private getParameterValue(parameter: IValueNamePair | IValueNamePair[]): string {
-    if (!parameter) return '';
-    if (Array.isArray(parameter)) {
-      return parameter.map(p => `${p.valueName}<br>${p.value}`).join('<br><br>');
+  private getCAPParameterValues(msg: ICAPAlert, organisation: string): ILCMSContent[] {
+    const result = [];
+    if (!msg || !msg.info || !msg.info.parameter) {
+      result.push(createLCMSContent(organisation, organisation));
+    } else {
+      const parameter: IValueNamePair | IValueNamePair[] = msg.info.parameter;
+      if (Array.isArray(parameter)) {
+        parameter.forEach(p => {
+          result.push(createLCMSContent(organisation, p.valueName, p.value));
+        });
+      } else {
+        result.push(createLCMSContent(organisation, parameter.valueName, parameter.value));
+      }
     }
-    return parameter.value;
+    // return parameter.value;
+    return result;
   }
 
   private handleLargeDataMessage(message: IAdapterMessage) {
@@ -259,7 +272,7 @@ export class TestbedSink extends Sink {
     console.log(stringify(msg));
     if (msg.dataType && (msg.dataType === DataType.pdf || msg.dataType === DataType.wms)) {
       // || msg.dataType === DataType.geojson)) {
-      this.publishToLCMS('ZKI', msg.title, `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`);
+      this.publishToLCMS([createLCMSContent('ZKI', msg.title, `<h2>${msg.title}</h2><br><br><a href="${msg.url}">${msg.url}</a><br><br>${msg.description}`)]);
     } else {
       axios.default
         .get(msg.url)
@@ -291,7 +304,7 @@ export class TestbedSink extends Sink {
     return path.join(this.dataPath, `${keyFiltered.toLowerCase()}.${ext}`);
   }
 
-  public publishToLCMS(organisation: string, title: string, content: string) {
+  public publishToLCMS(contents: ILCMSContent[]) {
     var success = (data: Object) => {
       log(`Sent data: ${JSON.stringify(data)}`);
     };
@@ -300,6 +313,10 @@ export class TestbedSink extends Sink {
       log(`Error sending data: ${err}`);
     };
 
-    this.activityPostContentsWS.writeLCMSData(organisation, title, content);
+    Promise.each(contents, content => {
+      return this.activityPostContentsWS.writeLCMSData(content.tabTitle, content.fieldTitle, content.content);
+    }).then(() => {
+      console.log('Added/updated LCMS field');
+    });
   }
 }
