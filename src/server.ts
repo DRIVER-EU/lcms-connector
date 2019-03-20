@@ -141,6 +141,7 @@ export class Server {
       }
       console.log('Login success');
       if (this.serverMode) {
+        console.log('Will start server at ' + SERVER_PORT);
         this.startServer();
         this.loadActivities(false);
       } else {
@@ -151,6 +152,7 @@ export class Server {
 
   private startServer() {
     const app = express();
+    app.use(express.static(path.join('gui')));
     app.get('/update', (req, res) => {
       this.loadActivities();
       res.send('Publishing activities');

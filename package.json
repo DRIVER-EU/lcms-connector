@@ -4,7 +4,9 @@
   "description": "Extract data from LCMS and publish it either to a folder or Kafka.",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:server && npm run build:gui",
+    "build:server": "tsc",
+    "build:gui": "cd gui && npm run build",
     "start": "node ./bin/run.js -e \"Driver-EU\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,7 +16,7 @@
   "author": "Erik Vullings <erik.vullings@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@types/lodash": "^4.14.120",
+    "@types/lodash": "^4.14.121",
     "bluebird": "^3.5.3",
     "command-line-args": "^5.0.2",
     "command-line-usage": "^5.0.5",
@@ -28,8 +30,8 @@
     "request": "^2.88.0"
   },
   "devDependencies": {
-    "@types/geojson": "^7946.0.5",
-    "@types/node": "^10.12.18",
+    "@types/geojson": "^7946.0.6",
+    "@types/node": "^10.12.26",
     "@types/proj4": "^2.5.0",
     "@types/request": "^2.48.1"
   }

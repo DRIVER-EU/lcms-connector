@@ -26,12 +26,13 @@ Options
 
 Example
 
-  Save the GeoJSON every minute to the folder './data':
-  >> lcms_connector -p YOUR_PASSWORD -e "Excercise name" -r 60 -f data
-
-  Send the data every minute to Kafka (using the details in config.json):
-  >> lcms_connector -p YOUR_PASSWORD -e "Excercise name" -r 60 -k
+  Start in server mode:
+  >> lcms_connector -p YOUR_PASSWORD -e "Excercise name" -s -k
 ```
+
+# gui
+
+> Simple GUI for the LCMS adapter is available at http://localhost:5000
 
 # Limitations
 
