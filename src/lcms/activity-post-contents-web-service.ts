@@ -172,7 +172,7 @@ export class ActivityPostContentsWebService extends AbstractWebService {
         console.warn(`Created fieldID for ${title}`);
         fieldId = this.getFieldId(title);
       } else {
-        console.log(`USe existing fieldID for ${title}`);
+        console.log(`Use existing fieldID for ${title}`);
       }
       const body: IEditViewContent = {newContents: content, activityId: this.activity, fieldId: fieldId, setActivityRead: true, longEdit: false, attachments: [], type: 'FIELD'};
       this.requestLock(body)

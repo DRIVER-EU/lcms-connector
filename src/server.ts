@@ -24,6 +24,8 @@ import {ActivityPostContentsWebService} from './lcms/activity-post-contents-web-
 import {createLCMSContent} from './models/lcms';
 import {createDefaultCAPMessage, ICAPAlert} from './models/cap';
 import {INamedGeoJSON} from './lcms/named-geojson';
+import {ActivityActionOperationWebService} from './lcms/activity-action-operation-web-service';
+import { ICAPAction } from './lcms/action-operation';
 
 if (!fs.existsSync('./local')) {
   fs.mkdirSync('./local');
@@ -65,6 +67,7 @@ export class Server {
   private activityViewsWS: ActivityViewsWebService;
   private activityViewContentsWS: ActivityViewContentsWebService;
   private activityPostContentsWS: ActivityPostContentsWebService;
+  private activityActionOperationWS: ActivityActionOperationWebService;
   private activityMetadataWS: ActivityMetadataWebService;
   private drawingsWS: DrawingsWebService;
   private exercise: string;
@@ -134,6 +137,8 @@ export class Server {
     if (this.sink && this.sink.canPost()) {
       this.activityPostContentsWS = new ActivityPostContentsWebService(serverUrl, username, password);
       this.sink.setPostService(this.activityPostContentsWS);
+      this.activityActionOperationWS = new ActivityActionOperationWebService(serverUrl, username, password);
+      this.sink.setActionOperationService(this.activityActionOperationWS);
     }
     this.login(serverUrl, (err?: string) => {
       if (err) {
@@ -176,6 +181,10 @@ export class Server {
       (this.sink as TestbedSink).publishToLCMS([createLCMSContent('STEDIN', 'STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`)]);
       res.send('Published stedin');
     });
+    app.get('/test/action', (req, res) => {
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('action', 'action', JSON.stringify({title: ` Actie ${new Date().getMilliseconds()}`, description: 'Beschrijving', priority: 'AVERAGE'} as ICAPAction))]);
+      res.send('Published action');
+    });    
     app.get('/test/geojson', (req, res) => {
       let geoJson: INamedGeoJSON = {
         properties: {
@@ -187,7 +196,7 @@ export class Server {
           features: [{type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates: [5.1, 52.9]}}]
         }
       };
-      (this.sink as TestbedSink).send({'test': geoJson});
+      (this.sink as TestbedSink).send({test: geoJson});
       res.send('Published geojson');
     });
     app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));
@@ -284,6 +293,7 @@ export class Server {
         console.log('VIEW CONTENTS');
         console.log(col);
       }
+      this.activityActionOperationWS.setActivity(activity.id);
       this.activityPostContentsWS.setActivity(activity.id);
       this.activityPostContentsWS.setViews(this.views);
       this.activityPostContentsWS.setFields(
@@ -293,6 +303,7 @@ export class Server {
         }, {})
       );
       if (this.consumeDisciplines.indexOf(viewContent.screenTitle.toUpperCase()) >= 0) {
+        this.activityActionOperationWS.setCookie(this.cookie);
         this.activityPostContentsWS.setCookie(this.cookie);
         const cap = viewContent.toCAPMessages(this.id);
         if (sendToSink) {

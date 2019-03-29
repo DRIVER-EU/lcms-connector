@@ -5,6 +5,7 @@ import {ICAPAlert, IValueNamePair} from '../models/cap';
 import {ILargeDataUpdate, DataType} from '../models/ldu';
 import * as axios from 'axios';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
+import {ActivityActionOperationWebService} from '../lcms/activity-action-operation-web-service';
 import {INamedGeoJSON} from '../lcms/named-geojson';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -29,6 +30,7 @@ export class TestbedSink extends Sink {
   private capTopic: string = 'standard_cap';
   private queue: ProduceRequest[] = [];
   private activityPostContentsWS: ActivityPostContentsWebService;
+  private activityActionOperationWS: ActivityActionOperationWebService;
 
   constructor(options: ITestBedOptions, plotTopic: string, capTopic: string, private dataPath: string = '.') {
     super();
@@ -55,6 +57,10 @@ export class TestbedSink extends Sink {
 
   public setPostService(svc: ActivityPostContentsWebService) {
     this.activityPostContentsWS = svc;
+  }
+
+  public setActionOperationService(svc: ActivityActionOperationWebService) {
+    this.activityActionOperationWS = svc;
   }
 
   private connectAdapter(options: ITestBedOptions, retries: number = 0) {
@@ -244,6 +250,10 @@ export class TestbedSink extends Sink {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
       if (organisation && contents) this.publishToLCMS(contents);
+    } else if (organisation.indexOf('@tmt.eu') > 0) {
+      organisation = organisation.replace('@tmt.eu', '').toUpperCase();
+      const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      if (organisation && contents) this.publishToLCMS(contents);
     } else if (organisation.indexOf('@lcms.com') > 0) {
       organisation = organisation.replace('@lcms.com', '').toUpperCase();
       // const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
@@ -318,7 +328,11 @@ export class TestbedSink extends Sink {
     };
 
     Promise.each(contents, content => {
+      if (content.tabTitle === 'action') {
+        return this.activityActionOperationWS.writeLCMSAction(content.tabTitle, content.content);
+      } else {
         return this.activityPostContentsWS.writeLCMSData(content.tabTitle, content.fieldTitle, content.content);
+      }
     }).then(() => {
       console.log('Added/updated LCMS field');
     });
