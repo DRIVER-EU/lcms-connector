@@ -1,6 +1,6 @@
-import {FeatureCollection} from 'geojson';
 import {ICAPAlert} from '../models/cap';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
+import {INamedGeoJSON} from '../lcms/named-geojson';
 
 /**
  * The Sink class offers an endpoint to the received data. It should be overriden, e.g. to save the data to a folder, or publish it to Kafka.
@@ -44,18 +44,20 @@ export class Sink {
   /**
    * Send the data to the sink.
    *
-   * @param {{ [key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject> }} data
+   * @param {{ [key: string]: INamedGeoJSON }} data
    * @returns
    *
    * @memberOf Sink
    */
-  public send(data: {[key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject>}) {
+  public send(data: {[key: string]: INamedGeoJSON}) {
     this.checkForRemovedLayers(data);
     for (let key in data) {
       if (!data.hasOwnProperty(key)) continue;
       let geoJson = data[key];
       if (this.hasChanged(key, geoJson)) {
         this.sendData(key, geoJson);
+      } else {
+        console.log(`Skipping unchanged data ${key}`);
       }
     }
   }
@@ -82,11 +84,11 @@ export class Sink {
    * Check whether the layer was removed.
    *
    * @protected
-   * @param {{ [key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject> }} data
+   * @param {{ [key: string]: INamedGeoJSON }} data
    *
    * @memberOf Sink
    */
-  protected checkForRemovedLayers(data: {[key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject>}) {
+  protected checkForRemovedLayers(data: {[key: string]: INamedGeoJSON}) {
     for (let key in this.hashes) {
       if (!this.hashes.hasOwnProperty(key)) continue;
       if (!data.hasOwnProperty(key)) {
@@ -101,12 +103,12 @@ export class Sink {
    *
    * @protected
    * @param {string} key
-   * @param {Object} geoJson
+   * @param {INamedGeoJSON} geoJson
    * @returns
    *
    * @memberOf Sink
    */
-  protected sendData(key: string, geoJson: FeatureCollection) {
+  protected sendData(key: string, geoJson: INamedGeoJSON) {
     return;
   }
 
@@ -137,7 +139,7 @@ export class Sink {
     return;
   }
 
-  protected hasChanged(key: string, data: GeoJSON.FeatureCollection<GeoJSON.GeometryObject> | ICAPAlert) {
+  protected hasChanged(key: string, data: INamedGeoJSON | ICAPAlert) {
     if (!data) return false;
     let hash = Sink.hash(data);
     if (!this.hashes.hasOwnProperty(key) || this.hashes[key] !== hash) {

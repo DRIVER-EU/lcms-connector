@@ -318,7 +318,7 @@ export class TestbedSink extends Sink {
     };
 
     Promise.each(contents, content => {
-      return this.activityPostContentsWS.writeLCMSData(content.tabTitle, content.fieldTitle, content.content);
+        return this.activityPostContentsWS.writeLCMSData(content.tabTitle, content.fieldTitle, content.content);
     }).then(() => {
       console.log('Added/updated LCMS field');
     });

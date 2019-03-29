@@ -1,5 +1,6 @@
 import { Ticket } from './ticket';
 import { Drawing } from './drawing';
+import { INamedGeoJSON } from './named-geojson';
 
 export interface DrawingObject {
   drawing: Drawing, drawingType: string,
@@ -30,7 +31,7 @@ export class Drawings {
    * @memberOf Drawing
    */
   public toGeoJSONCollection(cookie: string) {
-    let col: { [key: string]: GeoJSON.FeatureCollection<GeoJSON.GeometryObject> } = {};
+    let col: { [key: string]: INamedGeoJSON } = {};
     this.drawings.forEach((d: DrawingObject) => {
       let drawingCollection = d.drawing.toGeoJSONCollection(cookie);
       col = Object.assign(col, drawingCollection);

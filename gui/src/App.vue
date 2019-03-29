@@ -48,6 +48,12 @@ export default {
           url: "/test/html",
           text:
             "Sends a test CAP-message on the test-bed, appearing to be send from HTM"
+        },
+        {
+          title: "Send GeoJSON test message",
+          url: "/test/geojson",
+          text:
+            "Sends a test GeoJSON-message on the test-bed, appearing to be send from LCMS"
         }
       ]
     };

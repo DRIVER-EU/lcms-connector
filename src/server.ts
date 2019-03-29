@@ -23,6 +23,7 @@ import {ActivityViewContentsWebService} from './lcms/activity-view-contents-web-
 import {ActivityPostContentsWebService} from './lcms/activity-post-contents-web-service';
 import {createLCMSContent} from './models/lcms';
 import {createDefaultCAPMessage, ICAPAlert} from './models/cap';
+import {INamedGeoJSON} from './lcms/named-geojson';
 
 if (!fs.existsSync('./local')) {
   fs.mkdirSync('./local');
@@ -174,6 +175,20 @@ export class Server {
     app.get('/test/stedin', (req, res) => {
       (this.sink as TestbedSink).publishToLCMS([createLCMSContent('STEDIN', 'STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`)]);
       res.send('Published stedin');
+    });
+    app.get('/test/geojson', (req, res) => {
+      let geoJson: INamedGeoJSON = {
+        properties: {
+          guid: 'test',
+          name: 'LCMS test'
+        },
+        geojson: {
+          type: 'FeatureCollection',
+          features: [{type: 'Feature', properties: {}, geometry: {type: 'Point', coordinates: [5.1, 52.9]}}]
+        }
+      };
+      (this.sink as TestbedSink).send({'test': geoJson});
+      res.send('Published geojson');
     });
     app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));
   }
