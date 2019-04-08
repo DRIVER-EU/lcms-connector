@@ -263,7 +263,8 @@ export class TestbedSink extends Sink {
     }
   }
 
-  private getCAPParameterValues(msg: ICAPAlert, organisation: string): ILCMSContent[] {
+  private getCAPParameterValues(msg: ICAPAlert, organisation: string): ILCMSContent[] | undefined {
+    if (organisation === 'NO-REPLY') return undefined;
     const result = [];
     if (!msg || !msg.info || !msg.info.parameter) {
       result.push(createLCMSContent(organisation, organisation));

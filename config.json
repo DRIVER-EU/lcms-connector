@@ -6,8 +6,18 @@
     "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms",
     "consumeDisciplines": ["SITUATIEBEELD"]
   },
+  "testbed": {
+    "_sslOptions": {
+      "pfx": "certs/LCMS.p12",
+      "passphrase": null,
+      "ca": "certs/test-ca.pem",
+      "rejectUnauthorized": true
+    }
+  },
   "kafka": {
     "testbedOptions": {
+      "kafkaHost": "driver-testbed.eu:3501",
+      "schemaRegistry": "http://driver-testbed.eu:3502",
       "kafkaHost": "localhost:3501",
       "schemaRegistry": "http://localhost:3502",
       "kafkaHost": "tb5.driver-testbed.eu:3551",
@@ -19,7 +29,8 @@
       "ignoreTimeTopic": true,
       "wrapUnions": "auto",
       "clientId": "lcms",
-      "consume": [{"topic": "standard_cap", "offset": 99999}, {"topic": "flood_actual", "offset": 99999}, {"topic": "flood_prediction_geojson", "offset": 99999}],
+      "consume": [{"topic": "standard_cap", "offset": 99999} ],
+      "consume": [{"topic": "standard_cap", "offset": 99999}, {"topic": "flood_actual", "offset": 99999}, {"topic": "flood_prediction_geojson", "offset": 99999} ],
       "produce": ["lcms_plots", "standard_cap"],
       "autoRegisterSchemas": true,
       "schemaFolder": "./schemas",

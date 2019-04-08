@@ -44,6 +44,7 @@ if (config.testbed && config.testbed.sslOptions && config.kafka && config.kafka.
     ca: config.testbed.sslOptions.ca ? fs.readFileSync(config.testbed.sslOptions.ca) : undefined,
     rejectUnauthorized: config.testbed.sslOptions.rejectUnauthorized
   };
+  console.log('Using SSL config');
 }
 
 const log = console.log;

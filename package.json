@@ -16,22 +16,22 @@
   "author": "Erik Vullings <erik.vullings@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@types/lodash": "^4.14.121",
+    "@types/lodash": "^4.14.123",
     "bluebird": "^3.5.3",
-    "command-line-args": "^5.0.2",
+    "command-line-args": "^5.1.1",
     "command-line-usage": "^5.0.5",
     "express": "^4.16.4",
     "lodash": "4.17.11",
-    "node-test-bed-adapter": "^0.7.5",
+    "node-test-bed-adapter": "^0.8.6",
     "pretty-data": "^0.40.0",
     "proj4": "^2.5.0",
     "proj4js": "^10.0.0",
-    "puppeteer": "^1.12.2",
+    "puppeteer": "^1.14.0",
     "request": "^2.88.0"
   },
   "devDependencies": {
-    "@types/geojson": "^7946.0.6",
-    "@types/node": "^10.12.26",
+    "@types/geojson": "^7946.0.7",
+    "@types/node": "^10.14.4",
     "@types/proj4": "^2.5.0",
     "@types/request": "^2.48.1"
   }
