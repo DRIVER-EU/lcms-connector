@@ -30,11 +30,11 @@
       "wrapUnions": "auto",
       "clientId": "lcms",
       "consume": [{"topic": "standard_cap", "offset": 99999} ],
-      "consume": [{"topic": "standard_cap", "offset": 99999}, {"topic": "flood_actual", "offset": 99999}, {"topic": "flood_prediction_geojson", "offset": 99999} ],
+      "consume": [{"topic": "standard_cap", "offset": 25}, {"topic": "flood_actual", "offset": 0}, {"topic": "flood_prediction_geojson", "offset": 0} ],
       "produce": ["lcms_plots", "standard_cap"],
+      "fromOffset": false,
       "autoRegisterSchemas": true,
       "schemaFolder": "./schemas",
-      "fromOffset": true,
       "logging": {
         "logToConsole": 2,
         "logToFile": 2,

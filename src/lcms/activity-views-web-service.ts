@@ -16,9 +16,13 @@ export class ActivityViewsWebService extends AbstractWebService {
       console.error('No views in response data: ' + JSON.stringify(data));
       return null;
     }
-    data.views = data.views.map(a => {
+    console.log(`# views before: ${data.views.length}`);
+    data.views = data.views.filter(b => {
+      return b.visible;
+    }).map(a => {
       return ActivityView.fromObject(a);
     });
+    console.log(`# views after: ${data.views.length}`);
     return data;
   }
 

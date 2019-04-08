@@ -11,6 +11,10 @@ export class ActivityWebService extends AbstractWebService {
   }
 
   public getRelevantData(data: {activitieList: Activity[];}) {
+    if (!data || !data.activitieList) {
+      console.warn('No activityList present');
+      return [];
+    }
     data.activitieList = data.activitieList.map(a => {
       return Activity.fromObject(a);
     });

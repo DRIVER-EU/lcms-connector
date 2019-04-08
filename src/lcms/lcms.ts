@@ -240,6 +240,17 @@ export class Line extends AElement {
   }
 
   public toGeoJSONFeature(): GeoJSON.Feature<GeoJSON.GeometryObject> {
+    const FORCE_POLYGON = true;
+    if (FORCE_POLYGON) {
+      return <GeoJSON.Feature<GeoJSON.Polygon>>{
+        type: 'Feature',
+        geometry: <GeoJSON.Polygon>{
+          type: 'Polygon',
+          coordinates: [this.coordinates]
+        },
+        properties: Object.assign({id: this.getID()}, this.attributes)
+      };
+    }
     return <GeoJSON.Feature<GeoJSON.LineString>>{
       type: 'Feature',
       geometry: <GeoJSON.LineString>{

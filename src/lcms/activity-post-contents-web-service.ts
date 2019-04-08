@@ -114,9 +114,10 @@ export class ActivityPostContentsWebService extends AbstractWebService {
     }
   }
 
-  private getFieldId(organisation: string) {
-    if (this.fields.hasOwnProperty(organisation)) {
-      return this.fields[organisation].id;
+  private getFieldId(organisation: string, fieldTitle: string) {
+    const key = `${organisation}--${fieldTitle}`;
+    if (this.fields.hasOwnProperty(key)) {
+      return this.fields[key].id;
     } else {
       return undefined;
     }
@@ -165,12 +166,12 @@ export class ActivityPostContentsWebService extends AbstractWebService {
 
   public async writeLCMSData(organisation: string, title: string, content: string) {
     return new Promise(async (resolve, reject) => {
-      var fieldId = this.getFieldId(title);
+      var fieldId = this.getFieldId(organisation, title);
       if (!fieldId) {
         await this.createProperField(organisation, title);
         await this.updateFields(this.activity, this.getViewId(organisation));
         console.warn(`Created fieldID for ${title}`);
-        fieldId = this.getFieldId(title);
+        fieldId = this.getFieldId(organisation, title);
       } else {
         console.log(`Use existing fieldID for ${title}`);
       }

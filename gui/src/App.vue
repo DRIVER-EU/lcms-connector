@@ -45,7 +45,7 @@ export default {
         },
         {
           title: "Send 'HTM' test message",
-          url: "/test/html",
+          url: "/test/htm",
           text:
             "Sends a test CAP-message on the test-bed, appearing to be send from HTM"
         },

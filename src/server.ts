@@ -175,11 +175,11 @@ export class Server {
       res.send('Published overig title');
     });
     app.get('/test/htm', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('HTM', 'HTM', `HTM Status ${new Date().getMilliseconds()}`)]);
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('HTM', 'Verwachtingen', `HTM Status ${new Date().getMilliseconds()}`)]);
       res.send('Published htm');
     });
     app.get('/test/stedin', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('STEDIN', 'STEDIN', `<h2>Stedin Status ${new Date().getMilliseconds()}</h2>`)]);
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('STEDIN', 'Verwachtingen', `<h3>Stedin Status ${new Date().getMilliseconds()}</h3>`)]);
       res.send('Published stedin');
     });
     app.get('/test/action', (req, res) => {
@@ -291,15 +291,16 @@ export class Server {
       if (!viewContent) return;
       let col = viewContent.screenTitle;
       if (this.debugMode) {
-        console.log('VIEW CONTENTS');
-        console.log(col);
+        console.log(`VIEW CONTENTS: ${col}`);
       }
       this.activityActionOperationWS.setActivity(activity.id);
       this.activityPostContentsWS.setActivity(activity.id);
       this.activityPostContentsWS.setViews(this.views);
       this.activityPostContentsWS.setFields(
         viewContent.fields.reduce((prev: Record<string, IField>, curr: IField) => {
-          prev[curr.screenTitle] = curr;
+          const key = `${viewContent.screenTitle}--${curr.screenTitle}`;
+          console.log(key);
+          prev[key] = curr;
           return prev;
         }, {})
       );
