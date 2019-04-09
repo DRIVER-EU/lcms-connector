@@ -10,6 +10,7 @@ import {LoginWebService} from './lcms/login-web-service';
 import {ActivityWebService} from './lcms/activity-web-service';
 import {DrawingsWebService} from './lcms/drawings-web-service';
 import {ActivityViewsWebService} from './lcms/activity-views-web-service';
+import {UserHeartbeatWebService} from './lcms/user-heartbeat-web-service';
 import {ActivityMetadataWebService} from './lcms/activity-metadata-web-service';
 import {Ticket} from './lcms/ticket';
 import {Drawings} from './lcms/drawings';
@@ -50,6 +51,8 @@ if (config.testbed && config.testbed.sslOptions && config.kafka && config.kafka.
 const log = console.log;
 const error = console.error;
 
+const LCMS_HEARTBEAT_MS = 30000;
+
 // /** The following variables store the webservices and the map controller as
 //  * indicated by the plugin documentation. We initialize the web services without
 //  * any parameters as they will only be set after the user clicks the login button.
@@ -70,6 +73,7 @@ export class Server {
   private activityPostContentsWS: ActivityPostContentsWebService;
   private activityActionOperationWS: ActivityActionOperationWebService;
   private activityMetadataWS: ActivityMetadataWebService;
+  private userHeartBeatWS: UserHeartbeatWebService;
   private drawingsWS: DrawingsWebService;
   private exercise: string;
   private cookie: string;
@@ -133,6 +137,7 @@ export class Server {
     this.activityViewsWS = new ActivityViewsWebService(serverUrl, username, password);
     this.activityViewContentsWS = new ActivityViewContentsWebService(serverUrl, username, password);
     this.activityMetadataWS = new ActivityMetadataWebService(serverUrl, username, password);
+    this.userHeartBeatWS = new UserHeartbeatWebService(serverUrl, username, password);
     this.drawingsWS = new DrawingsWebService(serverUrl, username, password);
 
     if (this.sink && this.sink.canPost()) {
@@ -158,7 +163,19 @@ export class Server {
   }
 
   private startUserAliveTick() {
-    return;
+    if (!this.userHeartBeatWS) return;
+    setTimeout(() => {
+      this.sendAliveTick();
+    }, LCMS_HEARTBEAT_MS);
+  }
+
+  private sendAliveTick() {
+    var success = (res: any) => {};
+    var failure = (error: any) => log('Error sending alive heartbeat to LCMS. ' + error);
+    this.userHeartBeatWS.loadData(success, failure, null, this.cookie);
+    setTimeout(() => {
+      this.sendAliveTick();
+    }, LCMS_HEARTBEAT_MS);
   }
 
   private startServer() {
@@ -302,7 +319,7 @@ export class Server {
       if (!viewContent) return;
       let col = viewContent.screenTitle;
       if (this.debugMode) {
-        console.log(`  VIEW CONTENTS: ${col}`);
+        console.log(`  VIEW CONTENTS: ${col} (${viewContent.fields.length} fields)`);
       }
       this.activityActionOperationWS.setActivity(activity.id);
       this.activityPostContentsWS.setActivity(activity.id);
@@ -310,7 +327,7 @@ export class Server {
       this.activityPostContentsWS.setFields(
         viewContent.fields.reduce((prev: Record<string, IField>, curr: IField) => {
           const key = `${viewContent.screenTitle}--${curr.screenTitle}`;
-          console.log(key);
+          // console.log(key);
           prev[key] = curr;
           return prev;
         }, {})
@@ -355,7 +372,7 @@ export class Server {
 
     // Failure callback that displayes the HTTP error status to the user
     var failure = error => {
-      log('Error when loading metadata: ' + error.statusText);
+      log('Error when loading metadata: ' + error);
     };
 
     /** Load the drawing data using both callbacks and the activity id. */

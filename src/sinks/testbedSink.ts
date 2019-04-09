@@ -245,11 +245,17 @@ export class TestbedSink extends Sink {
     if (organisation.indexOf('@crisissuite.com') > 0) {
       organisation = organisation.replace('@crisissuite.com', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
-      if (organisation && contents) this.publishToLCMS(contents);
+      if (organisation && contents) {
+        contents.forEach(c => (c.content = 'CrisisSuite: ' + c.content));
+        this.publishToLCMS(contents);
+      }
     } else if (organisation.indexOf('@sim-ci.com') > 0) {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
-      if (organisation && contents) this.publishToLCMS(contents);
+      if (organisation && contents) {
+        contents.forEach(c => (c.content = 'SIM-CI: ' + c.content));
+        this.publishToLCMS(contents);
+      }
     } else if (organisation.indexOf('@tmt.eu') > 0) {
       organisation = organisation.replace('@tmt.eu', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
