@@ -25,7 +25,7 @@ import {createLCMSContent} from './models/lcms';
 import {createDefaultCAPMessage, ICAPAlert} from './models/cap';
 import {INamedGeoJSON} from './lcms/named-geojson';
 import {ActivityActionOperationWebService} from './lcms/activity-action-operation-web-service';
-import { ICAPAction } from './lcms/action-operation';
+import {ICAPAction} from './lcms/action-operation';
 
 if (!fs.existsSync('./local')) {
   fs.mkdirSync('./local');
@@ -157,7 +157,12 @@ export class Server {
     });
   }
 
+  private startUserAliveTick() {
+    return;
+  }
+
   private startServer() {
+    this.startUserAliveTick();
     const app = express();
     app.use(express.static(path.join('gui')));
     app.get('/update', (req, res) => {
@@ -183,9 +188,15 @@ export class Server {
       res.send('Published stedin');
     });
     app.get('/test/action', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('ACTION', 'ACTION', JSON.stringify([{title: `Actie ${new Date().getMilliseconds()}`, description: 'Beschrijving', organisation: 'VR015-Haaglanden', team: 'ROT', discipline: 'GZ', function: 'AC', priority: 'AVERAGE'}] as ICAPAction[]))]);
+      (this.sink as TestbedSink).publishToLCMS([
+        createLCMSContent(
+          'ACTION',
+          'ACTION',
+          JSON.stringify([{title: `Actie ${new Date().getMilliseconds()}`, description: 'Beschrijving', organisation: 'VR015-Haaglanden', team: 'ROT', discipline: 'GZ', function: 'AC', priority: 'AVERAGE'}] as ICAPAction[])
+        )
+      ]);
       res.send('Published action');
-    });    
+    });
     app.get('/test/geojson', (req, res) => {
       let geoJson: INamedGeoJSON = {
         properties: {
@@ -273,7 +284,7 @@ export class Server {
 
     // Failure callback that displayes the HTTP error status to the user
     var failure = error => {
-      log('Error when loading views: ' + error.statusText);
+      log('Error when loading views: ' + error.statusText ? error.statusText : error);
       cb(null);
     };
 
@@ -291,7 +302,7 @@ export class Server {
       if (!viewContent) return;
       let col = viewContent.screenTitle;
       if (this.debugMode) {
-        console.log(`VIEW CONTENTS: ${col}`);
+        console.log(`  VIEW CONTENTS: ${col}`);
       }
       this.activityActionOperationWS.setActivity(activity.id);
       this.activityPostContentsWS.setActivity(activity.id);
@@ -317,7 +328,7 @@ export class Server {
 
     // Failure callback that displayes the HTTP error status to the user
     var failure = error => {
-      log('Error when loading views: ' + error.statusText);
+      log('Error when loading view contents: ' + error.statusText ? error.statusText : error);
     };
 
     /** Load the drawing data using both callbacks and the activity id. */

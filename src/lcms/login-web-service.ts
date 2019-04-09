@@ -35,6 +35,7 @@ export class LoginWebService extends AbstractWebService {
       const PASSWORD_SELECTOR = '#ifvPassword';
       const BUTTON_SELECTOR = '#loginForm > button';
       await page.waitFor(USERNAME_SELECTOR);
+      console.log('Login - Fill in user credentials');
       await page.click(USERNAME_SELECTOR);
       await page.keyboard.type(this.username);
       await page.click(PASSWORD_SELECTOR);
@@ -43,17 +44,23 @@ export class LoginWebService extends AbstractWebService {
       await page.click(BUTTON_SELECTOR);
       await page.waitForNavigation();
       await page.screenshot({path: 'images/login2.png'});
+      console.log('Login - Select the VR-oefen omgeving');
       const DOMAIN_SELECTOR = '#all-domains > div.domain-box.ng-scope > div';
       await page.click(DOMAIN_SELECTOR);
       await page.waitForNavigation();
       await page.waitFor('#section-to-print table tr th');
-      await page.waitFor(1000);
+      console.log('Login - delay');
+      await page.waitFor(4000);
+      console.log('Login - Get the activities');
       await page.screenshot({path: 'images/login3.png'});
       const cookies: any[] = await page.cookies();
       console.log(JSON.stringify(cookies));
       cookie = cookies.find(c => c.name === 'JSESSIONID');
+      console.log(`Login - Cookie: ${cookie.name}`);
       await browser.close();
+      console.log(`Login - Browser closed`);
     } catch (err) {
+      console.error(`Login - Err: ${err}`);
       return err;
     }
     return {cookie: `${cookie.name}=${cookie.value};SLG_GWPT_Show_Hide_tmp=1; SLG_wptGlobTipTmp=1`};
