@@ -183,7 +183,7 @@ export class Server {
       res.send('Published stedin');
     });
     app.get('/test/action', (req, res) => {
-      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('ACTION', 'ACTION', JSON.stringify({title: ` Actie ${new Date().getMilliseconds()}`, description: 'Beschrijving', priority: 'AVERAGE'} as ICAPAction))]);
+      (this.sink as TestbedSink).publishToLCMS([createLCMSContent('ACTION', 'ACTION', JSON.stringify([{title: `Actie ${new Date().getMilliseconds()}`, description: 'Beschrijving', organisation: 'VR015-Haaglanden', team: 'ROT', discipline: 'GZ', function: 'AC', priority: 'AVERAGE'}] as ICAPAction[]))]);
       res.send('Published action');
     });    
     app.get('/test/geojson', (req, res) => {

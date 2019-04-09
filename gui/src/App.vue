@@ -54,6 +54,12 @@ export default {
           url: "/test/geojson",
           text:
             "Sends a test GeoJSON-message on the test-bed, appearing to be send from LCMS"
+        },
+        {
+          title: "Send action test message",
+          url: "/test/action",
+          text:
+            "Sends a test Action-message on the test-bed, which is supposed to appear in the LCMS actielijst"
         }
       ]
     };

@@ -17,7 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/lodash": "^4.14.123",
-    "bluebird": "^3.5.3",
+    "bluebird": "^3.5.4",
     "command-line-args": "^5.1.1",
     "command-line-usage": "^5.0.5",
     "express": "^4.16.4",

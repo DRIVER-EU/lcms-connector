@@ -5,6 +5,8 @@ import {IActivityView} from './activity-view';
 import {ActivityViewContentsWebService} from './activity-view-contents-web-service';
 import {IActionOperation, ICreateActionOperationData, ICAPAction} from './action-operation';
 import {IUserInfo, ICurrentProfile} from './user-info';
+import * as bluebird from 'bluebird';
+import {findDisciplineId, findOrganizationId, findTeamId, findFunctionId} from '../models/lcms';
 
 export class ActivityActionOperationWebService extends AbstractWebService {
   private activityViewContentsWS: ActivityViewContentsWebService;
@@ -102,17 +104,55 @@ export class ActivityActionOperationWebService extends AbstractWebService {
     });
   }
 
-  public async writeLCMSAction(organisation: string, content: string) {
-    const parsedContent: ICAPAction = JSON.parse(content);
+  public async writeLCMSActions(organisation: string, content: string) {
+    const parsedContent: ICAPAction | ICAPAction[] = JSON.parse(content);
+    if (!parsedContent) {
+      return new Promise(async (resolve, reject) => {
+        reject('No content found in action message');
+      });
+    }
+    const actionArray: ICAPAction[] = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
     return new Promise(async (resolve, reject) => {
-      const userInfo: IUserInfo = await this.getUserInfo();
-      const profile: ICurrentProfile = userInfo.currentProfile;
-      const body: IActionOperation = {operation: 'CREATE_ACTION', data: {activityId: this.activity, description: parsedContent.description, summary: parsedContent.title, priority: parsedContent.priority, actionTaker: {disciplineId: profile.discipline.id, functionId: profile.function.id, teamId: profile.team.id, organizationId: profile.organization.id}}};
-      this.postData(body)
-        .then(data => {
+      bluebird
+        .each(actionArray, async action => {
+          await this.writeLCMSAction(action);
+        })
+        .then(() => {
+          console.log(`Sent ${actionArray.length} actions to LCMS`);
           resolve();
         })
         .catch(err => reject(err));
+    });
+  }
+
+  public async writeLCMSAction(capAction: ICAPAction) {
+    return new Promise(async (resolve, reject) => {
+      const userInfo: IUserInfo = await this.getUserInfo();
+      const profile: ICurrentProfile = userInfo.currentProfile;
+      const body: IActionOperation = {
+        operation: 'CREATE_ACTION',
+        data: {
+          activityId: this.activity,
+          description: capAction.description,
+          summary: capAction.title,
+          priority: capAction.priority,
+          actionTaker: {
+            disciplineId: findDisciplineId(capAction.discipline) || profile.discipline.id,
+            functionId: findFunctionId(capAction.function) || profile.function.id,
+            teamId: findTeamId(capAction.team) || profile.team.id,
+            organizationId: findOrganizationId(capAction.organisation) || profile.organization.id
+          }
+        }
+      };
+      this.postData(body)
+        .then((data) => {
+          console.log(`Added action ${JSON.stringify(data || {})} to LCMS`);
+          resolve();
+        })
+        .catch(err => {
+          console.warn(`Cannot send action ${JSON.stringify(body)} to LCMS`);
+          reject(err);
+        });
     });
   }
 }

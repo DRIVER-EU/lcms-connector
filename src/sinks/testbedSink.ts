@@ -330,7 +330,7 @@ export class TestbedSink extends Sink {
 
     Promise.each(contents, content => {
       if (content.tabTitle === 'ACTION') {
-        return this.activityActionOperationWS.writeLCMSAction(content.tabTitle, content.content);
+        return this.activityActionOperationWS.writeLCMSActions(content.tabTitle, content.content);
       } else {
         return this.activityPostContentsWS.writeLCMSData(content.tabTitle, content.fieldTitle, content.content);
       }
