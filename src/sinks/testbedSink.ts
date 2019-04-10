@@ -1,7 +1,7 @@
 import {ProduceRequest, TestBedAdapter, ITestBedOptions, IAdapterMessage} from 'node-test-bed-adapter';
 import {Sink} from './sink';
 import {FeatureCollection} from 'geojson';
-import {ICAPAlert, IValueNamePair} from '../models/cap';
+import {ICAPAlert, IValueNamePair, ICAPArea} from '../models/cap';
 import {ILargeDataUpdate, DataType} from '../models/ldu';
 import * as axios from 'axios';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
@@ -31,6 +31,7 @@ export class TestbedSink extends Sink {
   private queue: ProduceRequest[] = [];
   private activityPostContentsWS: ActivityPostContentsWebService;
   private activityActionOperationWS: ActivityActionOperationWebService;
+  private isEnabled: boolean = false;
 
   constructor(options: ITestBedOptions, plotTopic: string, capTopic: string, private dataPath: string = '.') {
     super();
@@ -48,7 +49,15 @@ export class TestbedSink extends Sink {
       console.log('Producer is connected');
       this.processQueue();
     });
-    this.connectAdapter(options);
+    setTimeout(() => {
+      this.connectAdapter(options);
+    }, 6000);
+  }
+
+  public setEnabled() {
+    if (this.isEnabled) return;
+    this.isEnabled = true;
+    this.processQueue();
   }
 
   public canPost() {
@@ -113,7 +122,7 @@ export class TestbedSink extends Sink {
   }
 
   private processQueue() {
-    if (this.queue.length > 0 && this.adapter && this.adapter.isConnected) {
+    if (this.queue.length > 0 && this.adapter && this.adapter.isConnected && this.isEnabled) {
       log(`Processing queue (of length: ${this.queue.length})...`);
       while (this.queue.length > 0) {
         const payload = this.queue.shift();
@@ -245,21 +254,32 @@ export class TestbedSink extends Sink {
     if (organisation.indexOf('@crisissuite.com') > 0) {
       organisation = organisation.replace('@crisissuite.com', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      const geo: string = this.getGeoFromCAP(msg, organisation);
       if (organisation && contents) {
-        contents.forEach(c => (c.content = 'CrisisSuite: ' + c.content));
+        contents.forEach(c => (c.content = `CrisisSuite: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
         this.publishToLCMS(contents);
       }
     } else if (organisation.indexOf('@sim-ci.com') > 0) {
       organisation = organisation.replace('@sim-ci.com', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      const geo: string = this.getGeoFromCAP(msg, organisation);
       if (organisation && contents) {
-        contents.forEach(c => (c.content = 'SIM-CI: ' + c.content));
+        contents.forEach(c => (c.content = `SIM-CI: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
         this.publishToLCMS(contents);
       }
+    } else if (organisation.indexOf('action@tmt.eu') > 0) {
+      organisation = organisation.replace('@tmt.eu', '').toUpperCase();
+      let contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      if (contents && Array.isArray(contents)) contents = contents.filter(c => c.fieldTitle === '_actions');
+      if (organisation && contents && contents.length > 0) this.publishToLCMS(contents);
     } else if (organisation.indexOf('@tmt.eu') > 0) {
       organisation = organisation.replace('@tmt.eu', '').toUpperCase();
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
-      if (organisation && contents) this.publishToLCMS(contents);
+      const geo: string = this.getGeoFromCAP(msg, organisation);
+      if (organisation && contents) {
+        contents.forEach(c => (c.content = `TMT: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
+        this.publishToLCMS(contents);
+      }
     } else if (organisation.indexOf('@lcms.com') > 0) {
       organisation = organisation.replace('@lcms.com', '').toUpperCase();
       // const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
@@ -269,9 +289,28 @@ export class TestbedSink extends Sink {
     }
   }
 
+  private getGeoFromCAP(msg: ICAPAlert, organisation: string): string {
+    if (organisation === 'NO-REPLY') return '';
+    let result = '';
+    if (!msg || !msg.info || !msg.info.area) {
+      return result;
+    }
+    const area: ICAPArea = msg.info.area;
+    if (area.circle) result += `Circle: ${area.circle}`;
+    if (area.polygon) result += `Polygon: ${area.polygon}`;
+    if (area.areaDesc) result += `\n\nDescription: ${area.areaDesc}`;
+    return result;
+  }
+
   private getCAPParameterValues(msg: ICAPAlert, organisation: string): ILCMSContent[] | undefined {
     if (organisation === 'NO-REPLY') return undefined;
     const result = [];
+    if (!msg || !msg.info) {
+      result.push(createLCMSContent(organisation, organisation));
+    } else if (Array.isArray(msg.info) && msg.info.length > 0) {
+      msg.info = msg.info[0];
+      console.warn('WARN: Only using first Info field!');
+    }
     if (!msg || !msg.info || !msg.info.parameter) {
       result.push(createLCMSContent(organisation, organisation));
     } else {

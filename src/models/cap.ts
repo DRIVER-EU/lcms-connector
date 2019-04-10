@@ -44,6 +44,7 @@ export interface ICAPArea {
   areaDesc: string;
   polygon?: Object;
   point?: Object;
+  circle?: Object;
 }
 
 export function createDefaultCAPMessage(senderId: string): ICAPAlert {
