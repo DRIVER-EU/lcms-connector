@@ -1,13 +1,14 @@
+export type LCMSPriorities = 'LOW' | 'AVERAGE' | 'HIGH' | 'URGENT';
+
 export interface ICAPAction {
   title: string;
   description: string;
-  priority: string;
+  priority: LCMSPriorities;
   organisation: string;
   team: string;
   discipline: string;
   function: string;
 }
-
 
 export interface IActionOperation {
   operation: 'CREATE_ACTION' | 'GET_ACTIONS';
@@ -19,7 +20,7 @@ export interface ICreateActionOperationData {
   activityId: string;
   description: string;
   summary: string;
-  priority: string;
+  priority: LCMSPriorities;
 }
 
 export interface IActionTaker {

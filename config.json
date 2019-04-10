@@ -7,9 +7,10 @@
     "consumeDisciplines": ["SITUATIEBEELD"]
   },
   "testbed": {
-    "_sslOptions": {
+    "sslOptions": {
+      "pfx": "certs/other-tool-1-client.p12",
       "pfx": "certs/LCMS.p12",
-      "passphrase": null,
+      "passphrase": "changeit",
       "ca": "certs/test-ca.pem",
       "rejectUnauthorized": true
     }
@@ -24,20 +25,24 @@
       "schemaRegistry": "http://tb5.driver-testbed.eu:3552",
       "kafkaHost": "tb4.driver-testbed.eu:3541",
       "schemaRegistry": "http://tb4.driver-testbed.eu:3542",
+      "kafkaHost": "driver-testbed.eu:3541",
+      "schemaRegistry": "http://driver-testbed.eu:3542",
+      "kafkaHost": "driver-testbed.eu:3551",
+      "schemaRegistry": "http://driver-testbed.eu:3552",
       "fetchAllSchemas": false,
       "fetchAllVersions": false,
       "ignoreTimeTopic": true,
       "wrapUnions": "auto",
       "clientId": "lcms",
-      "consume": [{"topic": "standard_cap", "offset": 99999} ],
-      "consume": [{"topic": "standard_cap", "offset": 25}, {"topic": "flood_actual", "offset": 0}, {"topic": "flood_prediction_geojson", "offset": 0} ],
+      "consume": [{"topic": "standard_cap", "offset": 164} ],
+      "consume": [{"topic": "standard_cap", "offset": 0}, {"topic": "flood_actual", "offset": 0}, {"topic": "flood_prediction_geojson", "offset": 0} ],
       "produce": ["lcms_plots", "standard_cap"],
       "fromOffset": false,
-      "autoRegisterSchemas": true,
+      "autoRegisterSchemas": false,
       "schemaFolder": "./schemas",
       "logging": {
         "logToConsole": 2,
-        "logToFile": 2,
+        "logToFile": 1,
         "logToKafka": 3,
         "logFile": "log.txt"
       }

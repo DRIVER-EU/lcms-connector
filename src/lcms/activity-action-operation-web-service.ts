@@ -105,6 +105,7 @@ export class ActivityActionOperationWebService extends AbstractWebService {
   }
 
   public async writeLCMSActions(organisation: string, content: string) {
+    console.log(`Trying to parse content: ${content}`);
     const parsedContent: ICAPAction | ICAPAction[] = JSON.parse(content);
     if (!parsedContent) {
       return new Promise(async (resolve, reject) => {
@@ -129,6 +130,7 @@ export class ActivityActionOperationWebService extends AbstractWebService {
     return new Promise(async (resolve, reject) => {
       const userInfo: IUserInfo = await this.getUserInfo();
       const profile: ICurrentProfile = userInfo.currentProfile;
+      if (!profile) reject('Could not get user profile info');
       const body: IActionOperation = {
         operation: 'CREATE_ACTION',
         data: {

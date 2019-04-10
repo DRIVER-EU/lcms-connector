@@ -77,6 +77,7 @@ export class Server {
   private drawingsWS: DrawingsWebService;
   private exercise: string;
   private cookie: string;
+  private loggedInToLCMS: boolean = false;
   private debugMode: boolean = false;
   private serverMode: boolean = false;
   private id: string = '';
@@ -169,6 +170,10 @@ export class Server {
     }, LCMS_HEARTBEAT_MS);
   }
 
+  public lcmsLoggedIn(): boolean {
+    return this.loggedInToLCMS;
+  }
+
   private sendAliveTick() {
     var success = (res: any) => {};
     var failure = (error: any) => log('Error sending alive heartbeat to LCMS. ' + error);
@@ -237,6 +242,13 @@ export class Server {
     var success = (cookie: string) => {
       log(`Stored cookie: ${cookie}`);
       this.cookie = cookie;
+      if (cookie) {
+        this.loggedInToLCMS = true;
+        if (this.sink && (this.sink as TestbedSink).setEnabled) (this.sink as TestbedSink).setEnabled();
+      } else {
+        this.loggedInToLCMS = false;
+        error('Could not get login cookie from LCMS!');
+      }
       cb();
     };
 
