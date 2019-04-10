@@ -151,7 +151,8 @@ export class ActivityPostContentsWebService extends AbstractWebService {
         console.log('--Updated fields');
         this.setFields(
           viewContent.fields.reduce((prev: Record<string, IField>, curr: IField) => {
-            prev[curr.screenTitle] = curr;
+            const key = `${viewContent.screenTitle}--${curr.screenTitle}`;
+            prev[key] = curr;
             return prev;
           }, {})
         );
