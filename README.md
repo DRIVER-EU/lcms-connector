@@ -6,7 +6,7 @@ The LCMS connector, as its name suggests, connects to the Dutch LCMS plot system
 
 In the config.json, the default settings are specified. Most importantly, the LCMS username (can also be provided on the command line) and the LCMS [server URL](https://oefen-veiligheidsregio.lcms.nl/lcms). On the command line, you need to specify the username and (a subset of) the activity that you wish to extract. Optionally, you can `refresh` it every `n` seconds.
 
-A local config file can be used to store secret data in a file that won't be added to the repository. This file can be placed in `local/config.json`. Example content is:
+A local config file can be used to store secret data in a file that won't be added to the repository. It will overrue the settings in the public config file. This file can be placed in `local/config.json`. Example content is:
 ```
 {
   "lcms": {
