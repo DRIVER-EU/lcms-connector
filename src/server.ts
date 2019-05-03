@@ -38,7 +38,8 @@ if (!fs.existsSync('./local/config.json')) {
 const localConfig: IConfig = require(path.resolve('./local/config.json'));
 const publicConfig: IConfig = require(path.resolve('config.json'));
 const config: IConfig = Object.assign(publicConfig, localConfig);
-if (config.testbed && config.testbed.sslOptions && config.kafka && config.kafka.testbedOptions) {
+const disableSSL: boolean = process.env.LCMS_CONNECTOR_SSL_MODE && yn(process.env.LCMS_CONNECTOR_SSL_MODE) === false;
+if (config.testbed && config.testbed.sslOptions && config.kafka && config.kafka.testbedOptions && !disableSSL) {
   config.kafka.testbedOptions.sslOptions = {
     passphrase: config.testbed.sslOptions.passphrase,
     pfx: config.testbed.sslOptions.pfx ? fs.readFileSync(config.testbed.sslOptions.pfx) : undefined,
@@ -46,7 +47,7 @@ if (config.testbed && config.testbed.sslOptions && config.kafka && config.kafka.
     ca: config.testbed.sslOptions.ca ? fs.readFileSync(config.testbed.sslOptions.ca) : undefined,
     rejectUnauthorized: config.testbed.sslOptions.rejectUnauthorized
   };
-  console.log('Using SSL config');
+  console.log('Using SSL config to connect to testbed');
 }
 
 const log = console.log;
@@ -81,6 +82,7 @@ export class Server {
   private loggedInToLCMS: boolean = false;
   private debugMode: boolean = false;
   private serverMode: boolean = false;
+  private sslMode: boolean = false;
   private id: string = '';
   private consumeDisciplines: string[] = [];
   private views: {[title: string]: ActivityView};
@@ -114,6 +116,7 @@ export class Server {
     this.refreshTime = options.refresh || 0;
     this.debugMode = options.debug || false;
     this.serverMode = options.server || false;
+    this.sslMode = !!config.kafka.testbedOptions.sslOptions;
     this.consumeDisciplines = config.lcms ? config.lcms.consumeDisciplines : [];
 
     // Overrule config with env variables if present
@@ -123,6 +126,7 @@ export class Server {
     options.password = process.env.LCMS_CONNECTOR_PASSWORD || options.password;
     this.exercise = process.env.LCMS_CONNECTOR_EXCERCISE || this.exercise;
     this.serverMode = process.env.LCMS_CONNECTOR_SERVER_MODE ? yn(process.env.LCMS_CONNECTOR_SERVER_MODE) : this.serverMode;
+    this.sslMode = process.env.LCMS_CONNECTOR_SSL_MODE ? yn(process.env.LCMS_CONNECTOR_SSL_MODE) : this.sslMode;
     this.debugMode = process.env.LCMS_CONNECTOR_DEBUG_MODE ? yn(process.env.LCMS_CONNECTOR_DEBUG_MODE) : this.debugMode;
     options.kafka = process.env.LCMS_CONNECTOR_KAFKA_MODE ? yn(process.env.LCMS_CONNECTOR_KAFKA_MODE) : options.kafka;
 
@@ -133,6 +137,10 @@ export class Server {
 
     if (options.kafka && config.kafka) {
       this.id = config.kafka.testbedOptions.clientId;
+      if (!this.sslMode) {
+        console.log(`Forcibly disabling SSL-Mode to connect to testbed`);
+        config.kafka.testbedOptions.sslOptions = null;
+      }
       this.sink = new TestbedSink(config.kafka.testbedOptions, config.kafka.plotTopic, config.kafka.capTopic, dataFolder);
       // this.sink = new FolderSink(dataFolder, imageFolder);
     } else {

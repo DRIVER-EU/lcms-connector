@@ -1,5 +1,5 @@
 # Creates the LCMS Connector Tool.
-# docker run --rm -it -p 5000:5000 -e LCMS_CONNECTOR_SERVER_MODE=true -e LCMS_CONNECTOR_KAFKA_MODE=true -e LCMS_CONNECTOR_DEBUG_MODE=true -e LCMS_CONNECTOR_SERVER_PORT=5000 -e LCMS_CONNECTOR_EXCERCISE='DRIVER+ Dry Run Training' -e LCMS_CONNECTOR_PASSWORD='PW' -v C:\dev\projects\DRIVER\LCMS-adapter\certs:/app/certs lcms-connector
+# docker run --rm -it -p 5000:5000 -e LCMS_CONNECTOR_SSL_MODE=true -e LCMS_CONNECTOR_SERVER_MODE=true -e LCMS_CONNECTOR_KAFKA_MODE=true -e LCMS_CONNECTOR_DEBUG_MODE=true -e LCMS_CONNECTOR_SERVER_PORT=5000 -e LCMS_CONNECTOR_EXCERCISE='DRIVER+ Dry Run Training' -e LCMS_CONNECTOR_PASSWORD='PW' -v C:\dev\projects\DRIVER\LCMS-adapter\certs:/app/certs lcms-connector
 
 FROM node:11-alpine AS builder
 ENV CHROME_BIN="/usr/bin/chromium-browser" PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
