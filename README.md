@@ -44,7 +44,7 @@ Example
 
 ## GUI
 
-A simple GUI for the LCMS adapter is available at http://localhost:5000/index.html
+A simple GUI for the LCMS adapter is available at [http://localhost:5000/index.html](http://localhost:5000/index.html)
 
 ## DRIVER+ Trial 
 
@@ -53,7 +53,7 @@ In the DRIVER+ Netherlands trial the LCMS-connector is used to display messages 
 - Make sure that there are tabs created for the partners that should be able to send information to LCMS, as the connector can not do that yet.
   - E.g. the HTM table using CrisisSuite will send messages from ```htm@crisissuite.com```. Therefore, add a tab under 'Monodisciplines' called 'HTM' (all capitals!). This new tab will show all messages from HTM, also the ones from e.g. ```htm@sim-ci.com```.
 - Start the server by ```node dist\\run.js -p 'MY_PASSWORD' -e 'DRIVER+ Dry Run Training' -k -d -s```
-- A simple GUI can be found on (http://localhost:5000/index.html)[http://localhost:5000/index.html]
+- A simple GUI can be found on [http://localhost:5000/index.html](http://localhost:5000/index.html)
 
 ## Limitations
 
