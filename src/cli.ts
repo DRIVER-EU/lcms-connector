@@ -77,19 +77,19 @@ export interface ICommandLineOptions {
 
 export class CommandLineInterface {
   static optionDefinitions = [
-    { name: 'help', alias: '?', type: Boolean, multiple: false, typeLabel: '[underline]{Help}', description: 'Display help information.' },
-    { name: 'kafka', alias: 'k', type: Boolean, multiple: false, typeLabel: '[underline]{Use Kafka}', description: 'Send output to Kafka.' },
-    { name: 'refresh', alias: 'r', type: Number, multiple: false, typeLabel: '[underline]{Refresh time}', description: 'Refresh time in seconds (default 0 = no refresh).' },
+    { name: 'help', alias: '?', type: Boolean, multiple: false, typeLabel: 'Help', description: 'Display help information.' },
+    { name: 'kafka', alias: 'k', type: Boolean, multiple: false, typeLabel: 'Use Kafka', description: 'Send output to Kafka.' },
+    { name: 'refresh', alias: 'r', type: Number, multiple: false, typeLabel: 'Refresh time', description: 'Refresh time in seconds (default 0 = no refresh).' },
     {
-      name: 'exercise', alias: 'e', type: String, multiple: false, typeLabel: '[underline]{Name of the selected exercise}',
+      name: 'exercise', alias: 'e', type: String, multiple: false, typeLabel: 'Name of the selected exercise',
       description: 'Only load the data from the selected exercise. If omitted, show active exercises. Case sensitive.'
     },
-    { name: 'folder', alias: 'f', type: String, multiple: false, typeLabel: '[underline]{Output folder}', description: 'For saving the GeoJSON files (default ./data).' },
-    { name: 'image', alias: 'i', type: String, multiple: false, typeLabel: '[underline]{Image folder}', description: 'For saving the image files (default ./images).' },
-    { name: 'username', alias: 'u', type: String, multiple: false, typeLabel: '[underline]{Username}', description: 'If given, overrides the name specified in config.json.' },
-    { name: 'password', alias: 'p', type: String, multiple: false, typeLabel: '[underline]{Password}', description: 'LCMS password for the user (as specified in config.json).' },
-    { name: 'debug', alias: 'd', type: Boolean, multiple: false, typeLabel: '[underline]{Use debug mode}', description: 'Write debug output to files.' },
-    { name: 'server', alias: 's', type: Boolean, multiple: false, typeLabel: '[underline]{Start server mode}', description: 'If true, start tool in server mode. Otherwise, send the LCMS information once, then quit.' }
+    { name: 'folder', alias: 'f', type: String, multiple: false, typeLabel: 'Output folder', description: 'For saving the GeoJSON files (default ./data).' },
+    { name: 'image', alias: 'i', type: String, multiple: false, typeLabel: 'Image folder', description: 'For saving the image files (default ./images).' },
+    { name: 'username', alias: 'u', type: String, multiple: false, typeLabel: 'Username', description: 'If given, overrides the name specified in config.json.' },
+    { name: 'password', alias: 'p', type: String, multiple: false, typeLabel: 'Password', description: 'LCMS password for the user (as specified in config.json).' },
+    { name: 'debug', alias: 'd', type: Boolean, multiple: false, typeLabel: 'Use debug mode', description: 'Write debug output to files.' },
+    { name: 'server', alias: 's', type: Boolean, multiple: false, typeLabel: 'Start server mode', description: 'If true, start tool in server mode. Otherwise, send the LCMS information once, then quit.' }
   ];
 
   static sections = [{
@@ -109,6 +109,8 @@ export class CommandLineInterface {
 }
 
 let options: ICommandLineOptions = commandLineArgs(CommandLineInterface.optionDefinitions);
+options.password = process.env.LCMS_CONNECTOR_PASSWORD || options.password;
+options.exercise = process.env.LCMS_CONNECTOR_EXCERCISE || options.exercise;
 
 if (options.help || !options.password || !options.exercise) {
   const getUsage = require('command-line-usage');
