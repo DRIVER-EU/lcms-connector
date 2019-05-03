@@ -1,0 +1,13 @@
+.vscode/
+certs/
+data/
+dist/
+local/
+node_modules/
+schemas/
+*.txt
+*.png
+
+gui/node_modules/
+gui/dist/
+

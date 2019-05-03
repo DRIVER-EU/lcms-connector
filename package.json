@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build:server && npm run build:gui",
-    "build:server": "tsc",
+    "build:server": "./node_modules/.bin/tsc -p .",
     "build:gui": "cd gui && npm run build",
     "start": "node ./bin/run.js -e \"Driver-EU\"",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,17 +22,19 @@
     "command-line-usage": "^5.0.5",
     "express": "^4.16.4",
     "lodash": "4.17.11",
-    "node-test-bed-adapter": "^0.8.6",
+    "node-test-bed-adapter": "0.8.6",
     "pretty-data": "^0.40.0",
     "proj4": "^2.5.0",
     "proj4js": "^10.0.0",
     "puppeteer": "^1.14.0",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "yn": "^3.1.0"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.7",
-    "@types/node": "^10.14.4",
+    "@types/node": "^10.14.6",
     "@types/proj4": "^2.5.0",
-    "@types/request": "^2.48.1"
+    "@types/request": "^2.48.1",
+    "typescript": "^3.4.5"
   }
 }

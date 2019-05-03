@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as express from 'express';
+import * as yn from 'yn';
 import {ICommandLineOptions} from './cli';
 import {IConfig} from './models/config';
 import {Settings} from './models/settings';
@@ -63,7 +64,7 @@ const LCMS_HEARTBEAT_MS = 30000;
 // const activitiesWS = new LCMS.ActivityWebService();
 // const drawingsWS = new LCMS.DrawingWebService();
 
-const SERVER_PORT: number = +process.env['SERVER_PORT'] || 5000;
+const SERVER_PORT: number = +process.env.LCMS_CONNECTOR_SERVER_PORT || 5000;
 
 export class Server {
   private loginWS: LoginWebService;
@@ -114,6 +115,16 @@ export class Server {
     this.debugMode = options.debug || false;
     this.serverMode = options.server || false;
     this.consumeDisciplines = config.lcms ? config.lcms.consumeDisciplines : [];
+
+    // Overrule config with env variables if present
+    config.kafka.testbedOptions.kafkaHost = process.env.KAFKA_BROKER_URL || config.kafka.testbedOptions.kafkaHost;
+    config.kafka.testbedOptions.schemaRegistry = process.env.SCHEMA_REGISTRY_URL || config.kafka.testbedOptions.schemaRegistry;
+    options.username = process.env.LCMS_CONNECTOR_USERNAME || options.username;
+    options.password = process.env.LCMS_CONNECTOR_PASSWORD || options.password;
+    this.exercise = process.env.LCMS_CONNECTOR_EXCERCISE || this.exercise;
+    this.serverMode = process.env.LCMS_CONNECTOR_SERVER_MODE ? yn(process.env.LCMS_CONNECTOR_SERVER_MODE) : this.serverMode;
+    this.debugMode = process.env.LCMS_CONNECTOR_DEBUG_MODE ? yn(process.env.LCMS_CONNECTOR_DEBUG_MODE) : this.debugMode;
+    options.kafka = process.env.LCMS_CONNECTOR_KAFKA_MODE ? yn(process.env.LCMS_CONNECTOR_KAFKA_MODE) : options.kafka;
 
     if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder);
     if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
@@ -186,7 +197,9 @@ export class Server {
   private startServer() {
     this.startUserAliveTick();
     const app = express();
-    app.use(express.static(path.join('gui')));
+    const staticFolder = path.join('gui');
+    console.log(`Exposing static folder ${staticFolder}`);
+    app.use(express.static(staticFolder));
     app.get('/update', (req, res) => {
       this.loadActivities();
       res.send('Publishing activities');
@@ -233,7 +246,10 @@ export class Server {
       (this.sink as TestbedSink).send({test: geoJson});
       res.send('Published geojson');
     });
-    app.listen(SERVER_PORT, () => console.log(`App listening on port ${SERVER_PORT}`));
+    const server = app.listen(SERVER_PORT, () => {
+      console.log(`App listening on port ${SERVER_PORT}`);
+      if (this.debugMode) console.log(server.address());
+    });
   }
 
   private login(serverUrl: string, cb: Function) {

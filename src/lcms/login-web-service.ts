@@ -26,9 +26,10 @@ export class LoginWebService extends AbstractWebService {
 
   public async loadDataAsync() {
     var cookie = {name: '', value: ''};
+    const puppeteerOptions: any = {ignoreHTTPSErrors: true, headless: true, executablePath: process.env.CHROME_BIN || null, args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-dev-shm-usage']};
     try {
       console.log('Logging in on LCMS...');
-      const browser = await puppeteer.launch({ignoreHTTPSErrors: true});
+      const browser = await puppeteer.launch(puppeteerOptions);
       const page = await browser.newPage();
       await page.goto(this.getServiceSpecificUrl());
       const USERNAME_SELECTOR = '#ifvUsername';

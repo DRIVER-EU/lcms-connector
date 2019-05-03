@@ -1,0 +1,23 @@
+---
+version: '3'
+services:
+  lcms_connector:
+    image: drivereu/lcms-connector:1.0.0
+    hostname: lcms_connector
+    environment:
+      KAFKA_BROKER_URL: broker:9092
+      SCHEMA_REGISTRY_URL: http://schema_registry:3502
+      LCMS_CONNECTOR_SERVER_PORT: 5000
+      LCMS_CONNECTOR_SERVER_MODE: 'true'
+      LCMS_CONNECTOR_KAFKA_MODE: 'true'
+      LCMS_CONNECTOR_DEBUG_MODE: 'true'
+      LCMS_CONNECTOR_EXCERCISE: 'DRIVER+ Dry Run Training'
+      LCMS_CONNECTOR_USERNAME: '15-vullingse'
+      LCMS_CONNECTOR_PASSWORD: 'PW'
+    ports:
+      - 8500:5000
+    volumes:
+      - ./certs/app/certs
+    depends_on:
+      - broker
+      - schema_registry
