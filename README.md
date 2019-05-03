@@ -42,11 +42,20 @@ Example
   >> lcms_connector -p YOUR_PASSWORD -e "Excercise name" -s -k
 ```
 
-# gui
+## GUI
 
-> Simple GUI for the LCMS adapter is available at http://localhost:5000
+A simple GUI for the LCMS adapter is available at http://localhost:5000/index.html
 
-# Limitations
+## DRIVER+ Trial 
+
+In the DRIVER+ Netherlands trial the LCMS-connector is used to display messages from CrisisSuite and other tools that publish information on the test-bed in LCMS. In order to set-up the LCMS-connector for this, the following steps should be followed: 
+- Log into LCMS and create a new (or select an existing) scenario in the LCMS oefenomgeving.
+- Make sure that there are tabs created for the partners that should be able to send information to LCMS, as the connector can not do that yet.
+  - E.g. the HTM table using CrisisSuite will send messages from ```htm@crisissuite.com```. Therefore, add a tab under 'Monodisciplines' called 'HTM' (all capitals!). This new tab will show all messages from HTM, also the ones from e.g. ```htm@sim-ci.com```.
+- Start the server by ```node dist\\run.js -p 'MY_PASSWORD' -e 'DRIVER+ Dry Run Training' -k -d -s```
+- A simple GUI can be found on (http://localhost:5000/index.html)[http://localhost:5000/index.html]
+
+## Limitations
 
 The GeoJSON output does not (yet) include all features that can be specified in LCMS. Noteably, it exports:
 - Symbols (icons). The icon pictures are also saved.
@@ -54,16 +63,6 @@ The GeoJSON output does not (yet) include all features that can be specified in 
 - Polygons and circles/arcs
 Furthermore, as the GeoJSON specification does not include style information, this data if omitted from the output. As a result, aspects such as line width, dashes, fill colors, etc. are no longer present.
 
-# DRIVER+ Trial 
-
-In the DRIVER+ Netherlands trial the LCMS-connector is used to display messages from CrisisSuite and other tools that publish information on the test-bed in LCMS. In order to set-up the LCMS-connector for this, the following steps should be followed: 
-- Log into LCMS and create a new (or select an existing) scenario in the LCMS oefenomgeving.
-- Make sure that there are tabs created for the partners that should be able to send information to LCMS, as the connector can not do that yet.
-  - E.g. the HTM table using CrisisSuite will send messages from ```htm@crisissuite.com```. Therefore, add a tab under 'Monodisciplines' called 'HTM' (all capitals!). This new tab will show all messages from HTM, also the ones from e.g. ```htm@sim-ci.com```.
-- Start the server by ```node dist\\run.js -p 'MY_PASSWORD' -e 'DRIVER+ Dry Run Training' -k -d -s```
-- A simple GUI can be found on (http://localhost:5000)[http://localhost:5000]
-
-
-# References
+## References
 
 This adapter is based on the OpenLayers LCMS plugin which can be obtained from [IFV](www.ifv.nl). Although that adapter is more complete, it can only be used inside a browser environment, whereas the current adapter can be run as a service on Windows and Linux, generating a standard GeoJSON output.
