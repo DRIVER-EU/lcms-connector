@@ -2,7 +2,7 @@
   "debugMode": true,
   "refreshTime": 0,
   "lcms": {
-    "username": "15-vullingse",
+    "username": "USER",
     "serverUrl": "https://oefen-veiligheidsregio.lcms.nl/lcms",
     "consumeDisciplines": ["SITUATIEBEELD"]
   },
