@@ -55,10 +55,12 @@ export class Sink {
     for (let key in data) {
       if (!data.hasOwnProperty(key)) continue;
       let geoJson = data[key];
-      if (this.hasChanged(key, geoJson)) {
+      if (!geoJson || !geoJson.geojson || !geoJson.geojson.features || !geoJson.geojson.features.length) {
+        console.log(`Skipping empty geojson: ${key}`);
+      } else if (this.hasChanged(key, geoJson)) {
         this.sendData(key, geoJson);
       } else {
-        console.log(`Skipping unchanged data ${key}`);
+        console.log(`Skipping unchanged data: ${key}`);
       }
     }
   }

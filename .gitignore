@@ -8,8 +8,9 @@ out
 tmp.json
 icons
 local
-.vscode
+.vscode/sett*
 log.txt
 *.png
 API.md
 *.txt
+.env

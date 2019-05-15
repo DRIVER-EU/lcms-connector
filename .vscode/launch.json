@@ -1,0 +1,35 @@
+{
+  // Use IntelliSense to learn about possible Node.js debug attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "program": "${workspaceRoot}\\dist\\run.js",
+      "cwd": "${workspaceRoot}",
+      "env": {
+        "DEBUG": "kafka-node:*"
+      },
+      "args": ["-e", "Test Driver-EU", "-k", "-d", "-s"],
+      "args": ["-e", "DRIVER+ Dry Run 2 - Block 2", "-k", "-d", "-s"],
+      "args": ["-e", "DRIVER+ Dry Run 2 - Block 3+4", "-k", "-d", "-s"],
+      "args": ["-e", "DRIVER+ Dry Run Training", "-k", "-d", "-s"],
+      "envFile": "${workspaceFolder}/.env",
+      "_notused": "node dist\\run.js -e 'DRIVER+ Dry Run Training' -k -d -s",
+      "outFiles": [],
+      "sourceMaps": true,
+      "outDir": "${workspaceRoot}\\dist"
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Process",
+      "port": 5858,
+      "outFiles": [],
+      "sourceMaps": true
+    }
+  ]
+}

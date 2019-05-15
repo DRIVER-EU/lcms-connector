@@ -36,7 +36,7 @@ export class LoginWebService extends AbstractWebService {
       const PASSWORD_SELECTOR = '#ifvPassword';
       const BUTTON_SELECTOR = '#loginForm > button';
       await page.waitFor(USERNAME_SELECTOR);
-      console.log('Login - Fill in user credentials');
+      console.log(`Login - Fill in user credentials - ${this.username}:${this.password.length}`);
       await page.click(USERNAME_SELECTOR);
       await page.keyboard.type(this.username);
       await page.click(PASSWORD_SELECTOR);
