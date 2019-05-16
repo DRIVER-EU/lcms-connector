@@ -208,6 +208,8 @@ export class TestbedSink extends Sink {
         log_error('Error sending GeoJSON: ' + error);
         log_error('Data: ' + data);
         return;
+      } else {
+        log('Payload sent.');
       }
     });
   }

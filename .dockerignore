@@ -1,4 +1,5 @@
 .vscode/
+.env
 certs/
 data/
 dist/

@@ -1,4 +1,4 @@
-import {ICAPAlert} from '../models/cap';
+import {ICAPAlert, ICAPInfo} from '../models/cap';
 import {ActivityPostContentsWebService} from '../lcms/activity-post-contents-web-service';
 import {INamedGeoJSON} from '../lcms/named-geojson';
 import {ActivityActionOperationWebService} from '../lcms/activity-action-operation-web-service';
@@ -76,9 +76,13 @@ export class Sink {
   public sendCAP(data: {[key: string]: ICAPAlert}) {
     for (let key in data) {
       if (!data.hasOwnProperty(key)) continue;
-      let capData = data[key];
-      if (this.hasChanged(key, capData)) {
+      const capData = data[key];
+      const capContent = capData.info;
+      if (this.hasChanged(key, capContent)) {
+        console.log(`Sending changed CAP-content: ${key}`);
         this.sendCAPData(key, capData);
+      } else {
+        console.log(`Skipping unchanged CAP-content: ${key}`);
       }
     }
   }
@@ -94,9 +98,10 @@ export class Sink {
   protected checkForRemovedLayers(data: {[key: string]: INamedGeoJSON}) {
     for (let key in this.hashes) {
       if (!this.hashes.hasOwnProperty(key)) continue;
-      if (!data.hasOwnProperty(key)) {
+      if (!data.hasOwnProperty(key) && key !== 'cap') {
         this.deleteData(key);
         delete this.hashes[key];
+        console.log(`Deleted hash: ${key}`);
       }
     }
   }
@@ -142,14 +147,17 @@ export class Sink {
     return;
   }
 
-  protected hasChanged(key: string, data: INamedGeoJSON | ICAPAlert) {
+  protected hasChanged(key: string, data: INamedGeoJSON | ICAPInfo) {
     if (!data) return false;
     let hash = Sink.hash(data);
+    console.log(`Hashes: ${JSON.stringify(this.hashes)}`);
     if (!this.hashes.hasOwnProperty(key) || this.hashes[key] !== hash) {
       // new or changed
       this.hashes[key] = hash;
+      console.log(`Save hash for ${key}: ${hash}`);
       return true;
     } else {
+      console.log(`Unknown hash for ${key}: ${hash}`);
       return false;
     }
   }

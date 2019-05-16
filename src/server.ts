@@ -54,6 +54,7 @@ const log = console.log;
 const error = console.error;
 
 const LCMS_HEARTBEAT_MS = 30000;
+const LCMS_AUTO_UPDATE_MS = 60000;
 
 // /** The following variables store the webservices and the map controller as
 //  * indicated by the plugin documentation. We initialize the web services without
@@ -189,6 +190,12 @@ export class Server {
     }, LCMS_HEARTBEAT_MS);
   }
 
+  private startAutoUpdate() {
+    setTimeout(() => {
+      this.checkForUpdates();
+    }, LCMS_AUTO_UPDATE_MS);
+  }
+
   public lcmsLoggedIn(): boolean {
     return this.loggedInToLCMS;
   }
@@ -202,8 +209,17 @@ export class Server {
     }, LCMS_HEARTBEAT_MS);
   }
 
+  private checkForUpdates() {
+    console.log('Auto-update check');
+    this.loadActivities();
+    setTimeout(() => {
+      this.checkForUpdates();
+    }, LCMS_AUTO_UPDATE_MS);
+  }
+
   private startServer() {
     this.startUserAliveTick();
+    this.startAutoUpdate();
     const app = express();
     const staticFolder = path.join('gui');
     console.log(`Exposing static folder ${staticFolder}`);
@@ -330,7 +346,7 @@ export class Server {
       let col = JSON.stringify(views) as any;
       if (this.debugMode) {
         console.log('VIEWS');
-        console.log(col);
+        // console.log(col);
       }
       cb(views.views);
     };
@@ -373,7 +389,7 @@ export class Server {
         this.activityPostContentsWS.setCookie(this.cookie);
         const cap = viewContent.toCAPMessages(this.id);
         if (sendToSink) {
-          console.log('Sending...: ' + JSON.stringify(cap));
+          console.log('Start sending process...: ' + JSON.stringify(cap));
           this.sink.sendCAP({cap: cap});
         }
       }
