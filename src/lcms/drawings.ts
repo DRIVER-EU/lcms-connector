@@ -32,8 +32,8 @@ export class Drawings {
    */
   public toGeoJSONCollection(cookie: string) {
     let col: { [key: string]: INamedGeoJSON } = {};
-    this.drawings.forEach((d: DrawingObject) => {
-      let drawingCollection = d.drawing.toGeoJSONCollection(cookie);
+    this.drawings.forEach((d: DrawingObject, drawingIndex: number) => {
+      let drawingCollection = d.drawing.toGeoJSONCollection(cookie, drawingIndex + 1);
       col = Object.assign(col, drawingCollection);
     });
     return col;
