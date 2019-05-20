@@ -269,6 +269,14 @@ export class TestbedSink extends Sink {
         contents.forEach(c => (c.content = `SIM-CI: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
         this.publishToLCMS(contents);
       }
+    } else if (organisation.indexOf('@dlr.de') > 0) {
+      organisation = organisation.replace('@dlr.de', '').toUpperCase();
+      const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
+      const geo: string = this.getGeoFromCAP(msg, organisation);
+      if (organisation && contents) {
+        contents.forEach(c => (c.content = `SIM-CI: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
+        this.publishToLCMS(contents);
+      }
     } else if (organisation.indexOf('action@tmt.eu') > 0) {
       organisation = organisation.replace('@tmt.eu', '').toUpperCase();
       let contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
