@@ -470,6 +470,7 @@ export class Server {
         }
       });
       log('');
+      if (this.loggedInToLCMS && this.sink && (this.sink as TestbedSink).setEnabled) (this.sink as TestbedSink).setEnabled();
       if (!exerciseFound) {
         log('No exercise found, so no data is loaded. Please specify an exercise with the `-e "exercise name" option on the command line');
         process.exit(0);
@@ -479,8 +480,10 @@ export class Server {
     // Failure callback that displayes the HTTP error status to the user
     var failure = error => {
       log('Error when loading metadata: ' + error.statusText);
+      if (this.loggedInToLCMS && this.sink && (this.sink as TestbedSink).setEnabled) (this.sink as TestbedSink).setEnabled();
     };
 
+    if (this.loggedInToLCMS && this.sink && (this.sink as TestbedSink).setDisabled) (this.sink as TestbedSink).setDisabled();
     this.activitiesWS.loadData(
       success,
       failure,

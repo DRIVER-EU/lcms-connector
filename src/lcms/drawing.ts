@@ -35,7 +35,7 @@ export class Drawing {
       let geoJson: INamedGeoJSON = {
         properties: {
           guid: tl.id,
-          name: tl.name
+          name: layerTitle
         },
         geojson: {
           type: 'FeatureCollection',
@@ -66,6 +66,7 @@ export class Drawing {
         });
       });
     });
+    console.log(JSON.stringify(col));
     return col;
   }
 }

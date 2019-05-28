@@ -57,7 +57,13 @@ export class TestbedSink extends Sink {
   public setEnabled() {
     if (this.isEnabled) return;
     this.isEnabled = true;
+    console.log('Enabled testbedsink');
     this.processQueue();
+  }
+
+  public setDisabled() {
+    this.isEnabled = false;
+    console.log('Disabled testbedsink');
   }
 
   public canPost() {
