@@ -283,7 +283,7 @@ export class TestbedSink extends Sink {
         contents.forEach(c => (c.content = `SIM-CI: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
         this.publishToLCMS(contents);
       }
-    } else if (organisation.indexOf('action@tmt.eu') > 0) {
+    } else if (organisation.indexOf('action@tmt.eu') >= 0) {
       organisation = organisation.replace('@tmt.eu', '').toUpperCase();
       let contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
       if (contents && Array.isArray(contents)) contents = contents.filter(c => c.fieldTitle === '_actions');
