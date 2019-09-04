@@ -59,7 +59,7 @@ export class LoginWebService extends AbstractWebService {
         console.log('Login - select user profile');
         const PROFILE_SELECTOR = 'VR015';
         const profileValues: string[] = await page.$$eval('table.ifv-table tbody tr', list => list.map(el => el.innerHTML));
-        const profileIndex = profileValues.findIndex(el => el.indexOf(PROFILE_SELECTOR) >= 0);
+        const profileIndex = 1 + profileValues.findIndex(el => el.indexOf(PROFILE_SELECTOR) >= 0);
         await page.click(`table.ifv-table tbody tr:nth-child(${profileIndex})`);
         await page.waitFor(500);
         await page.click('input[type="submit"]');

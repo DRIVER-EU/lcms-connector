@@ -492,7 +492,7 @@ export class Server {
         onlyNotRead: 'false',
         onlyOwnOrganization: 'true',
         onlyTemplate: 'false',
-        pagingCount: '15',
+        pagingCount: '25',
         pagingStart: '0',
         pollingReload: 'false',
         searchQuery: '',
