@@ -49,11 +49,26 @@ export class LoginWebService extends AbstractWebService {
       const DOMAIN_SELECTOR = '#all-domains > div.domain-box.ng-scope > div';
       await page.click(DOMAIN_SELECTOR);
       await page.waitForNavigation();
+      await page.waitFor(1000);
+        // If the account has multiple profiles, select the organisation name
+      console.log(page.url());
+      if (page.url().indexOf('set_user_profile') >= 0) {
+        await page.waitFor('#screen-user-profiles');
+        await page.waitFor(500);
+        await page.screenshot({path: 'images/login3.png'});
+        console.log('Login - select user profile');
+        const PROFILE_SELECTOR = 'VR015';
+        const profileValues: string[] = await page.$$eval('table.ifv-table tbody tr', list => list.map(el => el.innerHTML));
+        const profileIndex = profileValues.findIndex(el => el.indexOf(PROFILE_SELECTOR) >= 0);
+        await page.click(`table.ifv-table tbody tr:nth-child(${profileIndex})`);
+        await page.waitFor(500);
+        await page.click('input[type="submit"]');
+      }
       await page.waitFor('#section-to-print table tr th');
       console.log('Login - delay');
       await page.waitFor(4000);
       console.log('Login - Get the activities');
-      await page.screenshot({path: 'images/login3.png'});
+      await page.screenshot({path: 'images/login4.png'});
       const cookies: any[] = await page.cookies();
       console.log(JSON.stringify(cookies));
       cookie = cookies.find(c => c.name === 'JSESSIONID');
