@@ -26,7 +26,7 @@ export class LoginWebService extends AbstractWebService {
 
   public async loadDataAsync() {
     var cookie = {name: '', value: ''};
-    const puppeteerOptions: any = {ignoreHTTPSErrors: true, headless: true, executablePath: process.env.CHROME_BIN || null, args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-dev-shm-usage']};
+    const puppeteerOptions: any = {ignoreHTTPSErrors: true, headless: true, executablePath: process.env.CHROME_BIN || null, args: ['--no-sandbox', '--headless', '--disable-gpu', '--disable-dev-shm-usage'], defaultViewport: {width: 1400, height: 900}};
     try {
       console.log('Logging in on LCMS...');
       const browser = await puppeteer.launch(puppeteerOptions);
@@ -49,8 +49,9 @@ export class LoginWebService extends AbstractWebService {
       const DOMAIN_SELECTOR = '#all-domains > div.domain-box.ng-scope > div';
       await page.click(DOMAIN_SELECTOR);
       await page.waitForNavigation();
-      await page.waitFor(1000);
-        // If the account has multiple profiles, select the organisation name
+      await page.waitFor(3000);
+      await page.screenshot({path: 'images/login2b.png'});
+      // If the account has multiple profiles, select the organisation name
       console.log(page.url());
       if (page.url().indexOf('set_user_profile') >= 0) {
         await page.waitFor('#screen-user-profiles');
