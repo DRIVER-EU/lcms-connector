@@ -55,6 +55,19 @@ In the DRIVER+ Netherlands trial the LCMS-connector is used to display messages 
 - Start the server by ```node dist\\run.js -p 'MY_PASSWORD' -e 'DRIVER+ Dry Run Training' -k -d -s```
 - A simple GUI can be found on [http://localhost:5000/index.html](http://localhost:5000/index.html)
 
+## Docker
+When using the LCMS connector in Docker, the following environment variables are available:
+
+| Name                        | Value                                    | Default |
+| --------------------------- |:---------------------------------------- |---------| 
+| LCMS_CONNECTOR_USERNAME     | LCMS username                           |         |
+| LCMS_CONNECTOR_PASSWORD     | LCMS password                           |         |
+| LCMS_CONNECTOR_EXCERCISE    | Activity name in LCMS (case sensitive!) |         |
+| LCMS_PROFILE_KEY            | Profile to use in case there are multiple (e.g. VR015 or VR099)    | VR015  |
+| LCMS_CONNECTOR_SSL_MODE     | Whether SSL certificates should be used to connect to the test-bed | false  |
+| LCMS_CONNECTOR_DEBUG_MODE   | Enable debug logging                    | false   |
+
+
 ## Limitations
 
 The GeoJSON output does not (yet) include all features that can be specified in LCMS. Noteably, it exports:
