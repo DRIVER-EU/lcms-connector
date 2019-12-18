@@ -2,7 +2,7 @@ import {AbstractWebService} from './abstract-web-service';
 import * as puppeteer from 'puppeteer';
 
 export class LoginWebService extends AbstractWebService {
-  constructor(protected url: string, protected username: string, protected password: string) {
+  constructor(protected url: string, protected username: string, protected password: string, protected profileKey: string) {
     super(url, username, password);
   }
 
@@ -57,8 +57,8 @@ export class LoginWebService extends AbstractWebService {
         await page.waitFor('#screen-user-profiles');
         await page.waitFor(500);
         await page.screenshot({path: 'images/login3.png'});
-        console.log('Login - select user profile');
-        const PROFILE_SELECTOR = 'VR015';
+        const PROFILE_SELECTOR = this.profileKey;
+        console.log(`Login - select user profile ${this.profileKey}`);
         const profileValues: string[] = await page.$$eval('table.ifv-table tbody tr', list => list.map(el => el.innerHTML));
         const profileIndex = 1 + profileValues.findIndex(el => el.indexOf(PROFILE_SELECTOR) >= 0);
         await page.click(`table.ifv-table tbody tr:nth-child(${profileIndex})`);

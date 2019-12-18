@@ -88,6 +88,7 @@ export class Server {
   private consumeDisciplines: string[] = [];
   private views: {[title: string]: ActivityView};
   private fields: {[title: string]: ActivityViewContent};
+  private profileKey: string = '';
 
   /** The following variables are responsible for holding the ticket object, list
    * of available drawings and list of currently selected layers.
@@ -119,6 +120,7 @@ export class Server {
     this.serverMode = options.server || false;
     this.sslMode = !!config.kafka.testbedOptions.sslOptions;
     this.consumeDisciplines = config.lcms ? config.lcms.consumeDisciplines : [];
+    this.profileKey = 'VR015';
 
     // Overrule config with env variables if present
     config.kafka.testbedOptions.kafkaHost = process.env.KAFKA_BROKER_URL || config.kafka.testbedOptions.kafkaHost;
@@ -130,6 +132,7 @@ export class Server {
     this.sslMode = process.env.LCMS_CONNECTOR_SSL_MODE ? yn(process.env.LCMS_CONNECTOR_SSL_MODE) : this.sslMode;
     this.debugMode = process.env.LCMS_CONNECTOR_DEBUG_MODE ? yn(process.env.LCMS_CONNECTOR_DEBUG_MODE) : this.debugMode;
     options.kafka = process.env.LCMS_CONNECTOR_KAFKA_MODE ? yn(process.env.LCMS_CONNECTOR_KAFKA_MODE) : options.kafka;
+    this.profileKey = process.env.LCMS_PROFILE_KEY ? process.env.LCMS_PROFILE_KEY : this.profileKey;
 
     if (!fs.existsSync(imageFolder)) fs.mkdirSync(imageFolder);
     if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
@@ -153,7 +156,7 @@ export class Server {
   }
 
   initialize(serverUrl: string, username: string, password: string) {
-    this.loginWS = new LoginWebService(serverUrl, username, password);
+    this.loginWS = new LoginWebService(serverUrl, username, password, this.profileKey);
     this.activitiesWS = new ActivityWebService(serverUrl, username, password);
     this.activityViewsWS = new ActivityViewsWebService(serverUrl, username, password);
     this.activityViewContentsWS = new ActivityViewContentsWebService(serverUrl, username, password);

@@ -293,7 +293,7 @@ export class TestbedSink extends Sink {
       const contents: ILCMSContent[] = this.getCAPParameterValues(msg, organisation);
       const geo: string = this.getGeoFromCAP(msg, organisation);
       if (organisation && contents) {
-        contents.forEach(c => (c.content = `TMT: ${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
+        contents.forEach(c => (c.content = `${c.content}${geo ? '\n\nLocation: ' + geo : ''}`));
         this.publishToLCMS(contents);
       }
     } else if (organisation.indexOf('@lcms.com') > 0) {
